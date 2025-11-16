@@ -1,0 +1,470 @@
+# SCAIPOT Configuration Files
+
+## config/honeypot_categories/bitcoin_investment.yaml
+```yaml
+category: bitcoin_investment
+version: "1.0"
+enabled: true
+description: "Bitcoin investment scam honeypot"
+
+metadata:
+  target_communities:
+    - "Bitcoin Prague"
+    - "Crypto Trading CZ"
+    - "DeFi Investment Groups"
+  difficulty_level: "beginner"
+  engagement_rate: 0.85
+
+scammer_indicators:
+  - pattern: "guaranteed returns"
+    weight: 0.9
+  - pattern: "send test transaction"
+    weight: 0.95
+  - pattern: "limited opportunity"
+    weight: 0.7
+  - pattern: "act now"
+    weight: 0.6
+
+system_prompt: |
+  You are Petr, a 32-year-old software developer from Brno who recently 
+  made some profits on Ethereum investments. You're interested in learning 
+  more about Bitcoin and crypto yield farming, but you're skeptical and 
+  always ask technical questions about audits, tokenomics, and team doxxing.
+  
+  You have approximately €2,000 available to invest but you're cautious.
+  You respond thoughtfully and ask clarifying questions before committing 
+  to anything. You prefer honest conversations and get suspicious of 
+  promises of guaranteed returns.
+
+response_templates:
+  initial_contact:
+    - "Zajímavý projekt. Kolik potřebuju investovat minimálně?"
+    - "Máte audit od Certik nebo Hacken?"
+    - "Kolik je to reálně? Znám spoustu projektů co vypadaly fajn..."
+  
+  trust_building:
+    - "Možná bych zkusil. Ale musím si to lépe prostudovat."
+    - "Máte LinkedIn profil nebo GitHub? Chci vědět kdo za tím stojí."
+    - "Kolik ostatních lidí tam investovalo? Máte doklady?"
+  
+  payment_phase:
+    - "Dobře, zkoušim poslat 0.1 BTC jako test. Kam to posílám?"
+    - "Používáte Coinbase nebo privátní wallet? Chci vědět kam jdou peníze."
+    - "Kdy bych měl dostat vrátit?"
+
+behaviors:
+  url_click:
+    enabled: true
+    delay_seconds: [5, 15]
+    error_rate: 0.3  # 30% return error screenshot
+  
+  fake_transaction:
+    enabled: true
+    wallet_type: "btc"
+    amount_range: [0.01, 0.2]
+    blockchain_monitor: true
+    pattern_caching: true
+  
+  vm_access:
+    enabled: false
+  
+  network_analysis:
+    enabled: false
+
+platforms:
+  telegram:
+    response_style: "casual"
+    emoji_usage: "low"
+  
+  signal:
+    response_style: "formal"
+    emoji_usage: "none"
+
+cache_patterns:
+  - "send.*btc"
+  - "guaranteed.*return"
+  - "investment.*opportunity"
+  - "limited.*time"
+
+fraud_keywords:
+  - "bitcoin address"
+  - "wallet"
+  - "send"
+  - "transaction"
+  - "invest"
+```
+
+## config/honeypot_categories/romance_scam.yaml
+```yaml
+category: romance_scam
+version: "1.0"
+enabled: true
+description: "Romance scam leading to investment pitch"
+
+metadata:
+  target_communities:
+    - "Dating Apps"
+    - "Singles Groups"
+    - "Relationship Communities"
+  difficulty_level: "advanced"
+  engagement_rate: 0.92
+  duration_weeks: 6
+
+system_prompt: |
+  You are Martina, 29-year-old marketing manager from Brno. You're 
+  recently divorced, lonely, and looking for connection. You're financially 
+  stable with €30k savings but not tech-savvy about crypto.
+  
+  You're active on dating apps and open to new people. You share personal 
+  stories, express vulnerabilities, and gradually build emotional attachment.
+  
+  Personality: Warm, trusting, romantic, but cautious about money.
+
+timeline_behavior:
+  week_1:
+    phase: "romance_building"
+    response_frequency: "1-3 hours"
+    emotional_tone: "curious, flirty"
+    messages_per_day: 3
+  
+  week_2:
+    phase: "trust_escalation"
+    response_frequency: "30min - 1 hour"
+    emotional_tone: "attached, sharing personal"
+    messages_per_day: 8
+  
+  week_3_4:
+    phase: "crypto_introduction"
+    response_frequency: "immediate"
+    emotional_tone: "excited about opportunity"
+    messages_per_day: 12
+  
+  week_5_6:
+    phase: "investment_phase"
+    response_frequency: "immediate"
+    emotional_tone: "financially committed"
+    messages_per_day: 15
+
+response_templates:
+  romance_phase:
+    - "Tvoje zprávy mi dělají den lepší ❤️"
+    - "Kdy se můžeme sejít na kávě?"
+    - "Je ti v Brně líp bez tebe..."
+  
+  crypto_introduction:
+    - "Wow, €10k za týden? To zní skoro nereálně 😮"
+    - "Já jsem s kryptem nikdy nic nedělala... Je to bezpečné?"
+    - "Tvůj strýc vážně takhle vydělává?"
+  
+  investment_phase:
+    - "Okay, zkusím to s €500. Jak se na té platformě registruju?"
+    - "Posílat peníze přes Hong Kong? To zní divně..."
+    - "Pojď se sejdeme a peníze budeme řešit spolu"
+
+fraud_keywords:
+  - "investment"
+  - "trading"
+  - "exchange"
+  - "platform"
+  - "returns"
+  - "uncle"
+  - "trader"
+```
+
+## config/honeypot_categories/defi_rug_pull.yaml
+```yaml
+category: defi_rug_pull
+version: "1.0"
+enabled: true
+description: "DeFi liquidity pool / rug pull scam"
+
+metadata:
+  target_communities:
+    - "DeFi Traders"
+    - "Yield Farming"
+    - "Uniswap Communities"
+  difficulty_level: "intermediate"
+  technical_knowledge_required: "high"
+
+system_prompt: |
+  You are David, a 35-year-old software developer with strong Ethereum 
+  knowledge and 5 ETH in your wallet. You're skeptical about new projects 
+  but interested in yield farming opportunities.
+  
+  You always:
+  - Check smart contract code on Etherscan
+  - Ask about liquidity locks
+  - Verify team credentials
+  - Calculate APY carefully
+  - Demand contract audit links
+
+response_templates:
+  technical_questions:
+    - "Jaký je vaš kontraktní audit? Certik? Trail of Bits?"
+    - "Jaké procento likvidity je zamčeno a na jak dlouho?"
+    - "Má projekt bounty program? Kolik má wallet coinů?"
+  
+  due_diligence:
+    - "Podívám se na Etherscan... Chvilka."
+    - "[Fake screenshot: contract analysis]"
+    - "Vypadá to OK. Jaké jsou poplatky?"
+
+fraud_keywords:
+  - "liquidity pool"
+  - "yield"
+  - "apy"
+  - "lock"
+  - "contract"
+  - "audit"
+  - "uniswap"
+```
+
+## .github/workflows/tests.yml
+```yaml
+name: Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+    
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_DB: scaipot_test
+          POSTGRES_PASSWORD: testpass
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+    
+    env:
+      DATABASE_URL: postgresql://postgres:testpass@localhost:5432/scaipot_test
+      REDIS_URL: redis://localhost:6379
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e ".[dev]"
+    
+    - name: Lint with flake8
+      run: |
+        flake8 src/scaipot tests --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 src/scaipot tests --count --exit-zero --max-complexity=10 --max-line-length=100 --statistics
+    
+    - name: Format check with black
+      run: black --check src/scaipot tests
+    
+    - name: Type check with mypy
+      run: mypy src/scaipot --ignore-missing-imports
+    
+    - name: Run unit tests
+      run: pytest tests/unit -v --cov=src/scaipot --cov-report=xml
+    
+    - name: Run integration tests
+      run: pytest tests/integration -v
+    
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+
+  security:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Run Bandit security check
+      run: |
+        pip install bandit
+        bandit -r src/scaipot -f json -o bandit-report.json || true
+    
+    - name: Run pip-audit
+      run: |
+        pip install pip-audit
+        pip-audit --desc
+```
+
+## .github/workflows/security.yml
+```yaml
+name: Security Scanning
+
+on:
+  push:
+    branches: [ main ]
+  schedule:
+    - cron: '0 0 * * 0'  # Weekly
+
+jobs:
+  security:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Run CodeQL Analysis
+      uses: github/codeql-action/init@v2
+      with:
+        languages: 'python'
+    
+    - name: Autobuild
+      uses: github/codeql-action/autobuild@v2
+    
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v2
+    
+    - name: OWASP Dependency Check
+      uses: dependency-check/Dependency-Check_Action@main
+      with:
+        project: 'SCAIPOT'
+        path: '.'
+        format: 'JSON'
+```
+
+## .github/ISSUE_TEMPLATE/bug_report.md
+```markdown
+---
+name: Bug report
+about: Create a report to help us improve
+title: '[BUG] '
+labels: bug
+assignees: sparesparrow
+
+---
+
+**Describe the bug**
+A clear and concise description of what the bug is.
+
+**To Reproduce**
+Steps to reproduce the behavior:
+1. 
+2. 
+
+**Expected behavior**
+A clear and concise description of what you expected to happen.
+
+**Environment**
+- OS: 
+- Python version:
+- SCAIPOT version:
+- Docker: yes/no
+
+**Logs**
+```
+Paste relevant logs here
+```
+
+**Additional context**
+Add any other context about the problem here.
+```
+
+## docker/Dockerfile
+```dockerfile
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \\
+    gcc \\
+    libpq-dev \\
+    tcpdump \\
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application
+COPY src /app/src
+COPY config /app/config
+COPY scripts /app/scripts
+
+# Create non-root user
+RUN useradd -m -u 1000 scaipot && chown -R scaipot:scaipot /app
+USER scaipot
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \\
+    CMD python -c "import requests; requests.get('http://localhost:8000/health')"
+
+# Run application
+CMD ["python", "-m", "scaipot.main"]
+```
+
+## CONTRIBUTING.md
+```markdown
+# Contributing to SCAIPOT
+
+We welcome contributions! Please follow these guidelines:
+
+## Development Setup
+
+```bash
+git clone https://github.com/sparesparrow/scaipot.git
+cd scaipot
+pip install -e ".[dev]"
+pre-commit install
+```
+
+## Code Style
+
+- Python: PEP 8, checked with black/flake8
+- Max line length: 100 characters
+- Type hints required
+
+## Testing
+
+```bash
+pytest tests/ -v --cov=src/scaipot
+```
+
+## Pull Request Process
+
+1. Fork repository
+2. Create feature branch: `git checkout -b feature/your-feature`
+3. Commit changes: `git commit -am 'Add feature'`
+4. Push to branch: `git push origin feature/your-feature`
+5. Open Pull Request with description
+
+## Issues
+
+- Report bugs via GitHub Issues
+- Use labels: bug, feature, documentation, etc.
+- Include reproduction steps and environment details
+
+---
+
+Thank you for contributing to SCAIPOT!
+```

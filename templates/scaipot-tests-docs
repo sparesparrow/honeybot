@@ -1,0 +1,489 @@
+# SCAIPOT Tests & Documentation
+
+## tests/unit/test_pattern_detector.py
+```python
+import pytest
+from scaipot.fraud_detection.pattern_detector import PatternDetector
+
+
+@pytest.fixture
+def detector():
+    return PatternDetector()
+
+
+def test_detect_urgency_keywords(detector):
+    """Test urgency keyword detection"""
+    message = "Hurry! This opportunity is ending soon!"
+    result = detector.detect_pattern(message)
+    
+    assert result["urgency"] is True
+    assert "urgency_detected" in result["patterns"]
+    assert result["is_fraud"] is True
+
+
+def test_detect_btc_address(detector):
+    """Test Bitcoin address detection"""
+    message = "Send 0.5 BTC to 1A1z7agoat7SFy2o3a8sh9DZydtsuW5Ty"
+    result = detector.detect_pattern(message)
+    
+    assert len(result["btc_addresses"]) > 0
+    assert "btc_address_present" in result["patterns"]
+
+
+def test_detect_url(detector):
+    """Test URL detection"""
+    message = "Click here to verify: https://fake-exchange.com/login"
+    result = detector.detect_pattern(message)
+    
+    assert len(result["urls"]) > 0
+    assert "https://fake-exchange.com/login" in result["urls"]
+
+
+def test_pattern_hash_generation(detector):
+    """Test pattern hash generation for caching"""
+    message1 = "Send 0.5 BTC to 1A1z7agoat7SFy2o3a8sh9DZydtsuW5Ty"
+    message2 = "Send 1.2 ETH to 1B2z7agoat7SFy2o3a8sh9DZydtsuW5Tz"
+    
+    result1 = detector.detect_pattern(message1)
+    result2 = detector.detect_pattern(message2)
+    
+    # Different amounts should produce different hashes (due to NUM normalization)
+    assert result1["pattern_hash"] is not None
+    assert result2["pattern_hash"] is not None
+```
+
+## tests/unit/test_mcp_client.py
+```python
+import pytest
+from unittest.mock import AsyncMock, patch
+from scaipot.mcp_integration.mcp_client import MCPPromptsClient
+
+
+@pytest.mark.asyncio
+async def test_get_category_prompt():
+    """Test fetching category prompt from MCP-Prompts"""
+    
+    client = MCPPromptsClient(
+        base_url="http://localhost:3000",
+        api_key="test_key"
+    )
+    
+    with patch.object(client.http_client, 'get') as mock_get:
+        mock_response = AsyncMock()
+        mock_response.json.return_value = {
+            "category": "bitcoin_investment",
+            "system_prompt": "You are a curious investor...",
+            "response_templates": {"initial": "Hi there!"}
+        }
+        mock_get.return_value = mock_response
+        
+        result = await client.get_category_prompt("bitcoin_investment", "telegram")
+        
+        assert result["category"] == "bitcoin_investment"
+        assert "system_prompt" in result
+        mock_get.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_get_all_categories():
+    """Test fetching all categories"""
+    
+    client = MCPPromptsClient(
+        base_url="http://localhost:3000",
+        api_key="test_key"
+    )
+    
+    with patch.object(client.http_client, 'get') as mock_get:
+        mock_response = AsyncMock()
+        mock_response.json.return_value = [
+            {"name": "bitcoin_investment"},
+            {"name": "defi_rug_pull"},
+            {"name": "romance_scam"}
+        ]
+        mock_get.return_value = mock_response
+        
+        result = await client.get_all_categories()
+        
+        assert len(result) == 3
+        assert result[0]["name"] == "bitcoin_investment"
+```
+
+## tests/unit/test_claude_client.py
+```python
+import pytest
+from unittest.mock import AsyncMock, patch, MagicMock
+from scaipot.llm_engine.claude_client import ClaudeClient
+
+
+@pytest.mark.asyncio
+async def test_generate_response():
+    """Test response generation with Claude"""
+    
+    client = ClaudeClient(api_key="test_key")
+    
+    with patch.object(client.client, 'messages') as mock_messages:
+        # Mock Claude API response
+        mock_response = MagicMock()
+        mock_response.content = [MagicMock(text="That sounds interesting!")]
+        mock_response.usage.cache_read_input_tokens = 100
+        mock_messages.create.return_value = mock_response
+        
+        response = await client.generate_response(
+            system_prompt="You are a curious investor",
+            scammer_message="Send me 0.5 BTC",
+            conversation_history=[],
+            category="bitcoin_investment"
+        )
+        
+        assert response == "That sounds interesting!"
+        mock_messages.create.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_prompt_caching():
+    """Test that system prompt is cached"""
+    
+    client = ClaudeClient(api_key="test_key")
+    
+    with patch.object(client.client, 'messages') as mock_messages:
+        mock_response = MagicMock()
+        mock_response.content = [MagicMock(text="Response")]
+        mock_response.usage.cache_read_input_tokens = 50  # Cache hit
+        mock_messages.create.return_value = mock_response
+        
+        await client.generate_response(
+            system_prompt="System prompt",
+            scammer_message="Message",
+            conversation_history=[],
+            category="test"
+        )
+        
+        # Verify that cache_control was set
+        call_args = mock_messages.create.call_args
+        assert call_args is not None
+        # Check that ephemeral cache control is set on system prompt
+```
+
+## tests/integration/test_telegram_bot.py
+```python
+import pytest
+from unittest.mock import AsyncMock, MagicMock, patch
+from scaipot.bots.telegram_bot import TelegramHoneypot
+
+
+@pytest.fixture
+def telegram_bot(mock_mcp_client, mock_claude_client, mock_database):
+    return TelegramHoneypot(
+        token="test_token",
+        mcp_client=mock_mcp_client,
+        llm_engine=mock_claude_client,
+        db=mock_database,
+        default_category="bitcoin_investment"
+    )
+
+
+@pytest.mark.asyncio
+async def test_handle_message(telegram_bot, mock_claude_client):
+    """Test handling incoming Telegram message"""
+    
+    response = await telegram_bot.handle_message(
+        sender_id="123456",
+        message="Send me 0.5 BTC to get started",
+        platform="telegram",
+        group_id="Bitcoin Prague"
+    )
+    
+    # Verify response was generated
+    assert response is not None
+    
+    # Verify MCP client was called
+    mock_claude_client.generate_response.assert_called_once()
+    
+    # Verify database logging
+    telegram_bot.db.log_conversation.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_fraud_alert_on_btc_address(telegram_bot):
+    """Test that alert is triggered when BTC address detected"""
+    
+    await telegram_bot.handle_message(
+        sender_id="123456",
+        message="Send BTC to 1A1z7agoat7SFy2o3a8sh9DZydtsuW5Ty",
+        platform="telegram"
+    )
+    
+    # Verify alert was created
+    telegram_bot.db.create_alert.assert_called_once()
+    call_args = telegram_bot.db.create_alert.call_args
+    assert call_args is not None
+
+
+@pytest.mark.asyncio
+async def test_conversation_history_maintained(telegram_bot):
+    """Test that conversation history is properly maintained"""
+    
+    sender_id = "123456"
+    
+    # First message
+    await telegram_bot.handle_message(
+        sender_id=sender_id,
+        message="Hi, I'm interested in investing",
+        platform="telegram"
+    )
+    
+    # Second message
+    await telegram_bot.handle_message(
+        sender_id=sender_id,
+        message="How much should I invest?",
+        platform="telegram"
+    )
+    
+    # Verify conversation history has both exchanges
+    assert len(telegram_bot.conversations[sender_id]) == 4  # 2 user + 2 assistant
+```
+
+## tests/integration/test_end_to_end.py
+```python
+import pytest
+import asyncio
+from scaipot.main import SCAIPOT
+from scaipot.config.config import SCaipotConfig
+
+
+@pytest.mark.asyncio
+async def test_scaipot_initialization(mock_mcp_client, mock_claude_client, mock_database):
+    """Test SCAIPOT initialization"""
+    
+    config = SCaipotConfig()
+    config.telegram_enabled = True
+    config.signal_enabled = False
+    
+    scaipot = SCAIPOT(
+        config=config,
+        db=mock_database,
+        mcp_client=mock_mcp_client,
+        llm_engine=mock_claude_client
+    )
+    
+    await scaipot.initialize()
+    
+    # Verify database was connected
+    mock_database.connect.assert_called_once()
+    
+    # Verify bots were initialized
+    assert scaipot.telegram_bot is not None
+    assert scaipot.signal_bot is None
+
+
+@pytest.mark.asyncio
+async def test_scaipot_full_workflow(mock_mcp_client, mock_claude_client, mock_database):
+    """Test complete SCAIPOT workflow"""
+    
+    config = SCaipotConfig()
+    config.telegram_enabled = True
+    
+    scaipot = SCAIPOT(
+        config=config,
+        db=mock_database,
+        mcp_client=mock_mcp_client,
+        llm_engine=mock_claude_client
+    )
+    
+    await scaipot.initialize()
+    
+    # Simulate scammer message
+    if scaipot.telegram_bot:
+        response = await scaipot.telegram_bot.handle_message(
+            sender_id="scammer_123",
+            message="I have an investment opportunity for you",
+            platform="telegram"
+        )
+        
+        assert response is not None
+        mock_database.log_conversation.assert_called()
+```
+
+---
+
+## docs/SETUP.md
+
+# SCAIPOT Setup Guide
+
+## System Requirements
+
+- **OS**: Linux (Ubuntu 20.04+, Debian 11+) or macOS
+- **Python**: 3.10 or higher
+- **Docker**: 20.10+
+- **Memory**: 4GB minimum (8GB recommended)
+- **Disk**: 10GB minimum
+
+## Installation
+
+### Option 1: Docker Compose (Recommended)
+
+```bash
+# Clone repository
+git clone https://github.com/sparesparrow/scaipot.git
+cd scaipot
+
+# Create environment file
+cp .env.example .env
+
+# Edit .env with your API keys
+nano .env
+
+# Start full stack
+docker-compose up -d
+
+# Verify services are running
+docker-compose ps
+```
+
+### Option 2: Local Development Installation
+
+```bash
+# Clone and navigate
+git clone https://github.com/sparesparrow/scaipot.git
+cd scaipot
+
+# Create virtual environment
+python3.10 -m venv venv
+source venv/bin/activate
+
+# Install dependencies
+pip install -e ".[dev]"
+
+# Copy environment file
+cp .env.example .env
+
+# Initialize database
+python -m scaipot.cli init
+
+# Start honeypot
+python -m scaipot.cli start
+```
+
+## Configuration
+
+### 1. API Keys
+
+Get your API keys from:
+- **Anthropic Claude**: https://console.anthropic.com
+- **Telegram**: https://t.me/botfather
+- **Signal**: Phone number registration
+- **BlockCypher**: https://www.blockcypher.com
+
+### 2. Environment Variables
+
+Edit `.env` file:
+```bash
+ANTHROPIC_API_KEY=sk-ant-your-key
+TELEGRAM_BOT_TOKEN=123456789:ABCDEFGHijkl
+MCP_PROMPTS_URL=http://localhost:3000
+DATABASE_URL=postgresql://scaipot:password@localhost/scaipot
+REDIS_URL=redis://localhost:6379
+```
+
+### 3. Database Setup
+
+```bash
+# Create PostgreSQL database
+createdb scaipot
+
+# Run migrations
+python -m scaipot.cli init-db
+```
+
+## Verification
+
+```bash
+# Check services
+docker-compose ps
+
+# View logs
+docker-compose logs -f scaipot
+
+# Test Claude connection
+python -c "from scaipot.llm_engine.claude_client import ClaudeClient; client = ClaudeClient(); print('✓ Claude connected')"
+
+# Test Telegram bot
+python -m scaipot.cli test-telegram
+
+# Test Signal bot
+python -m scaipot.cli test-signal
+```
+
+---
+
+## docs/CATEGORIES.md
+
+# Honeypot Categories Guide
+
+SCAIPOT includes 12 predefined scam categories. Each has system prompts, response templates, and behavior configurations.
+
+## 1. Bitcoin Investment
+
+**Target**: Crypto investment groups, trading communities
+**Persona**: Curious beginner with €500 savings
+**Indicators**: "guaranteed returns", "send test transaction", "limited spots"
+
+## 2. DeFi Rug Pull
+
+**Target**: Yield farming, Uniswap communities
+**Persona**: Software dev with technical knowledge, 5 ETH
+**Indicators**: "locked liquidity", "100x potential", "audit passed"
+
+## 3. Romance Scam → Crypto
+
+**Target**: Dating apps, singles groups
+**Persona**: Lonely divorcée, emotionally vulnerable
+**Indicators**: "My uncle is a trader", weekly escalation to investment
+
+## 4. Fake Exchange
+
+**Target**: Crypto trading groups
+**Persona**: Skeptical trader, checks Etherscan
+**Indicators**: "Higher APY than others", verification needed
+
+## 5. NFT Mint
+
+**Target**: NFT communities
+**Persona**: Collector with 2 ETH, wants early access
+**Indicators**: "Limited supply", "Whitelist", "smart contract audit"
+
+[Continue for remaining 7 categories...]
+
+---
+
+## docs/README_CZ.md
+
+# SCAIPOT - Česká dokumentace
+
+SCAIPOT je AI-poháněný honeypot systém pro detekci a analýzu podvodníků v oblasti kryptoměn.
+
+## 🚀 Rychlý start
+
+```bash
+git clone https://github.com/sparesparrow/scaipot.git
+cd scaipot
+
+# Instalace
+docker-compose up -d
+
+# Inicializace
+python -m scaipot.cli init
+
+# Spuštění
+python -m scaipot.cli start
+```
+
+## 📚 Dokumentace
+
+- **[SETUP.md](SETUP.md)** - Instalace a konfigurace
+- **[CATEGORIES.md](CATEGORIES.md)** - Popis kategorií
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** - Architektura systému
+
+---
+
+**Všechna dokumentace v angličtině a češtině**

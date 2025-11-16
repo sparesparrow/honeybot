@@ -1,0 +1,795 @@
+# SCAIPOT Core Python Modules - Alpha v0.1.0
+
+## 1. src/scaipot/__init__.py
+```python
+"""SCAIPOT - AI-Powered Cryptocurrency Scammer Honeypot"""
+
+__version__ = "0.1.0"
+__author__ = "sparesparrow"
+__email__ = "dev@sparesparrow.dev"
+__license__ = "MIT"
+
+import logging
+
+logger = logging.getLogger(__name__)
+
+from scaipot.main import SCAIPOT
+
+__all__ = ["SCAIPOT", "logger", "__version__"]
+```
+
+## 2. src/scaipot/main.py
+```python
+"""SCAIPOT Application Entry Point"""
+
+import asyncio
+import logging
+from typing import Dict, List, Optional
+from dataclasses import dataclass
+
+from scaipot.bots.telegram_bot import TelegramHoneypot
+from scaipot.bots.signal_bot import SignalHoneypot
+from scaipot.mcp_integration.mcp_client import MCPPromptsClient
+from scaipot.llm_engine.claude_client import ClaudeClient
+from scaipot.storage.db import Database
+from scaipot.config.config import SCaipotConfig
+
+logger = logging.getLogger(__name__)
+
+
+@dataclass
+class SCAIPOT:
+    """Main SCAIPOT application orchestrator"""
+    
+    config: SCaipotConfig
+    db: Database
+    mcp_client: MCPPromptsClient
+    llm_engine: ClaudeClient
+    telegram_bot: Optional[TelegramHoneypot] = None
+    signal_bot: Optional[SignalHoneypot] = None
+    
+    async def initialize(self) -> None:
+        """Initialize SCAIPOT application"""
+        logger.info("Initializing SCAIPOT v0.1.0...")
+        
+        # Connect to database
+        await self.db.connect()
+        logger.info("✓ Database connected")
+        
+        # Load categories from MCP-Prompts
+        categories = await self.mcp_client.get_all_categories()
+        logger.info(f"✓ Loaded {len(categories)} honeypot categories from MCP-Prompts")
+        
+        # Initialize bots based on config
+        if self.config.telegram_enabled:
+            self.telegram_bot = TelegramHoneypot(
+                token=self.config.telegram_bot_token,
+                mcp_client=self.mcp_client,
+                llm_engine=self.llm_engine,
+                db=self.db
+            )
+            logger.info("✓ Telegram honeypot initialized")
+        
+        if self.config.signal_enabled:
+            self.signal_bot = SignalHoneypot(
+                phone_number=self.config.signal_phone_number,
+                mcp_client=self.mcp_client,
+                llm_engine=self.llm_engine,
+                db=self.db
+            )
+            logger.info("✓ Signal honeypot initialized")
+    
+    async def start(self) -> None:
+        """Start all honeypots"""
+        logger.info("Starting honeypots...")
+        
+        tasks = []
+        if self.telegram_bot:
+            tasks.append(self.telegram_bot.start())
+        if self.signal_bot:
+            tasks.append(self.signal_bot.start())
+        
+        await asyncio.gather(*tasks)
+    
+    async def shutdown(self) -> None:
+        """Gracefully shutdown SCAIPOT"""
+        logger.info("Shutting down SCAIPOT...")
+        await self.db.disconnect()
+        logger.info("✓ SCAIPOT shutdown complete")
+```
+
+## 3. src/scaipot/bots/base.py
+```python
+"""Base Bot Implementation"""
+
+import logging
+from abc import ABC, abstractmethod
+from typing import Dict, Any, Optional
+from datetime import datetime
+
+from scaipot.mcp_integration.mcp_client import MCPPromptsClient
+from scaipot.llm_engine.claude_client import ClaudeClient
+from scaipot.fraud_detection.pattern_detector import PatternDetector
+from scaipot.storage.db import Database
+
+logger = logging.getLogger(__name__)
+
+
+class BaseHoneypot(ABC):
+    """Abstract base class for honeypot bots"""
+    
+    def __init__(
+        self,
+        mcp_client: MCPPromptsClient,
+        llm_engine: ClaudeClient,
+        db: Database,
+        default_category: str = "general"
+    ):
+        self.mcp_client = mcp_client
+        self.llm_engine = llm_engine
+        self.db = db
+        self.pattern_detector = PatternDetector()
+        self.default_category = default_category
+        self.conversations: Dict[str, list] = {}
+    
+    @abstractmethod
+    async def start(self) -> None:
+        """Start honeypot listening for messages"""
+        pass
+    
+    async def handle_message(
+        self,
+        sender_id: str,
+        message: str,
+        platform: str,
+        group_id: Optional[str] = None
+    ) -> Optional[str]:
+        """Handle incoming message from scammer"""
+        logger.info(f"[{platform}] Message from {sender_id}: {message[:100]}")
+        
+        # Initialize conversation if new
+        if sender_id not in self.conversations:
+            self.conversations[sender_id] = []
+        
+        # Detect fraud patterns
+        fraud_indicators = self.pattern_detector.detect_pattern(message)
+        if fraud_indicators.get("is_fraud"):
+            logger.warning(f"Fraud detected from {sender_id}: {fraud_indicators}")
+            await self._alert_admin(sender_id, message, fraud_indicators, platform)
+        
+        # Get honeypot category (from group name or config)
+        category = self._detect_category(group_id or self.default_category)
+        
+        # Fetch category prompts from MCP-Prompts
+        category_config = await self.mcp_client.get_category_prompt(
+            category=category,
+            platform=platform
+        )
+        
+        # Generate response using Claude (with caching)
+        response = await self.llm_engine.generate_response(
+            system_prompt=category_config["system_prompt"],
+            scammer_message=message,
+            conversation_history=self.conversations[sender_id],
+            category=category
+        )
+        
+        # Store conversation
+        self.conversations[sender_id].append({
+            "role": "user",
+            "content": message,
+            "timestamp": datetime.now().isoformat()
+        })
+        self.conversations[sender_id].append({
+            "role": "assistant",
+            "content": response,
+            "timestamp": datetime.now().isoformat()
+        })
+        
+        # Log to database
+        await self.db.log_conversation(
+            sender_id=sender_id,
+            platform=platform,
+            category=category,
+            message=message,
+            response=response,
+            fraud_indicators=fraud_indicators
+        )
+        
+        return response
+    
+    def _detect_category(self, group_name: str) -> str:
+        """Detect scam category from group name using keywords"""
+        keywords_map = {
+            "bitcoin": ["bitcoin", "btc", "crypto", "blockchain"],
+            "defi": ["defi", "yield", "liquidity", "uniswap", "pancakeswap"],
+            "investment": ["investment", "trading", "forex", "stock"],
+            "romance": ["dating", "singles", "relationship", "love"],
+            "job": ["job", "work", "employment", "remote"],
+        }
+        
+        for category, keywords in keywords_map.items():
+            if any(kw in group_name.lower() for kw in keywords):
+                return category
+        
+        return self.default_category
+    
+    async def _alert_admin(
+        self,
+        sender_id: str,
+        message: str,
+        fraud_indicators: Dict[str, Any],
+        platform: str
+    ) -> None:
+        """Send alert to admin about suspicious activity"""
+        alert_text = (
+            f"🚨 Potential Scammer Detected!\n\n"
+            f"Platform: {platform}\n"
+            f"Sender ID: {sender_id}\n"
+            f"Message: {message[:200]}...\n"
+            f"Indicators: {fraud_indicators}\n"
+            f"Time: {datetime.now().isoformat()}"
+        )
+        
+        await self.db.create_alert(
+            sender_id=sender_id,
+            platform=platform,
+            alert_type="fraud_detected",
+            message=alert_text,
+            severity="high"
+        )
+```
+
+## 4. src/scaipot/bots/telegram_bot.py
+```python
+"""Telegram Honeypot Implementation"""
+
+import logging
+from telegram import Update
+from telegram.ext import Application, MessageHandler, filters, ContextTypes
+
+from scaipot.bots.base import BaseHoneypot
+
+logger = logging.getLogger(__name__)
+
+
+class TelegramHoneypot(BaseHoneypot):
+    """Telegram-specific honeypot bot"""
+    
+    def __init__(self, token: str, **kwargs):
+        super().__init__(**kwargs)
+        self.token = token
+        self.app: Optional[Application] = None
+    
+    async def start(self) -> None:
+        """Start Telegram honeypot"""
+        logger.info("Starting Telegram honeypot...")
+        
+        self.app = Application.builder().token(self.token).build()
+        
+        # Register message handler
+        self.app.add_handler(
+            MessageHandler(
+                filters.TEXT & ~filters.COMMAND,
+                self._handle_telegram_message
+            )
+        )
+        
+        # Start polling
+        await self.app.run_polling()
+    
+    async def _handle_telegram_message(
+        self,
+        update: Update,
+        context: ContextTypes.DEFAULT_TYPE
+    ) -> None:
+        """Handle Telegram message"""
+        sender_id = str(update.effective_user.id)
+        message = update.message.text
+        group_id = update.effective_chat.title if update.effective_chat else None
+        
+        # Generate response
+        response = await self.handle_message(
+            sender_id=sender_id,
+            message=message,
+            platform="telegram",
+            group_id=group_id
+        )
+        
+        if response:
+            await update.message.reply_text(response)
+```
+
+## 5. src/scaipot/mcp_integration/mcp_client.py
+```python
+"""MCP-Prompts Client"""
+
+import logging
+import httpx
+import asyncio
+from typing import Dict, Any, List
+from functools import lru_cache
+
+logger = logging.getLogger(__name__)
+
+
+class MCPPromptsClient:
+    """Client for MCP-Prompts server"""
+    
+    def __init__(self, base_url: str, api_key: str, cache_ttl: int = 300):
+        self.base_url = base_url
+        self.api_key = api_key
+        self.cache_ttl = cache_ttl
+        self.http_client = httpx.AsyncClient(
+            base_url=base_url,
+            headers={"Authorization": f"Bearer {api_key}"}
+        )
+    
+    async def get_category_prompt(
+        self,
+        category: str,
+        platform: str
+    ) -> Dict[str, Any]:
+        """Get category prompt configuration from MCP-Prompts"""
+        try:
+            response = await self.http_client.get(
+                f"/v1/prompts/honeypot/category/{category}",
+                params={"platform": platform}
+            )
+            response.raise_for_status()
+            return response.json()
+        except httpx.HTTPError as e:
+            logger.error(f"Error fetching category prompt: {e}")
+            raise
+    
+    async def get_all_categories(self) -> List[Dict[str, Any]]:
+        """Get all available honeypot categories"""
+        try:
+            response = await self.http_client.get(
+                "/v1/prompts/honeypot/categories"
+            )
+            response.raise_for_status()
+            return response.json()
+        except httpx.HTTPError as e:
+            logger.error(f"Error fetching categories: {e}")
+            raise
+    
+    async def close(self) -> None:
+        """Close HTTP client"""
+        await self.http_client.aclose()
+```
+
+## 6. src/scaipot/llm_engine/claude_client.py
+```python
+"""Claude API Client with Prompt Caching"""
+
+import logging
+import os
+from typing import List, Dict, Any, Optional
+from anthropic import Anthropic
+
+logger = logging.getLogger(__name__)
+
+
+class ClaudeClient:
+    """Claude API client with prompt caching support"""
+    
+    def __init__(self, api_key: Optional[str] = None, model: str = "claude-3-5-sonnet-20241022"):
+        self.api_key = api_key or os.getenv("ANTHROPIC_API_KEY")
+        self.model = model
+        self.client = Anthropic(api_key=self.api_key)
+    
+    async def generate_response(
+        self,
+        system_prompt: str,
+        scammer_message: str,
+        conversation_history: List[Dict[str, str]],
+        category: str = "general",
+        max_tokens: int = 512
+    ) -> str:
+        """Generate response using Claude with prompt caching"""
+        
+        messages = [
+            *conversation_history[-10:],  # Keep last 10 messages for context
+            {"role": "user", "content": scammer_message}
+        ]
+        
+        response = self.client.messages.create(
+            model=self.model,
+            max_tokens=max_tokens,
+            system=[
+                {
+                    "type": "text",
+                    "text": system_prompt,
+                    "cache_control": {"type": "ephemeral"}  # Cache system prompt
+                }
+            ],
+            messages=messages
+        )
+        
+        logger.info(
+            f"Claude response generated for {category} | "
+            f"Cache usage: {response.usage.cache_read_input_tokens} tokens read from cache"
+        )
+        
+        return response.content[0].text if response.content else ""
+```
+
+## 7. src/scaipot/fraud_detection/pattern_detector.py
+```python
+"""Fraud Pattern Detection"""
+
+import logging
+import re
+import hashlib
+from typing import Dict, Any
+
+logger = logging.getLogger(__name__)
+
+
+class PatternDetector:
+    """Detect fraud indicators in scammer messages"""
+    
+    def __init__(self):
+        self.urgency_keywords = [
+            "hurry", "limited time", "act now", "ending soon",
+            "rychle", "ihned", "dnes", "okamžitě"
+        ]
+        
+        self.btc_pattern = r'\\b[13][a-km-zA-HJ-NP-Z1-9]{25,34}\\b|bc1[a-z0-9]{39,59}\\b'
+        self.eth_pattern = r'0x[a-fA-F0-9]{40}'
+        self.url_pattern = r'https?://[^\\s]+'
+    
+    def detect_pattern(self, message: str) -> Dict[str, Any]:
+        """Detect fraud patterns in message"""
+        
+        indicators = {
+            "is_fraud": False,
+            "patterns": [],
+            "btc_addresses": [],
+            "eth_addresses": [],
+            "urls": [],
+            "urgency": False,
+            "pattern_hash": self._compute_pattern_hash(message)
+        }
+        
+        # Check urgency
+        if any(kw in message.lower() for kw in self.urgency_keywords):
+            indicators["urgency"] = True
+            indicators["patterns"].append("urgency_detected")
+        
+        # Extract cryptocurrency addresses
+        btc_matches = re.findall(self.btc_pattern, message)
+        if btc_matches:
+            indicators["btc_addresses"] = btc_matches
+            indicators["patterns"].append("btc_address_present")
+        
+        eth_matches = re.findall(self.eth_pattern, message)
+        if eth_matches:
+            indicators["eth_addresses"] = eth_matches
+            indicators["patterns"].append("eth_address_present")
+        
+        # Extract URLs
+        url_matches = re.findall(self.url_pattern, message)
+        if url_matches:
+            indicators["urls"] = url_matches
+            indicators["patterns"].append("url_present")
+        
+        # Determine if fraud
+        indicators["is_fraud"] = len(indicators["patterns"]) > 0
+        
+        logger.debug(f"Pattern detection result: {indicators}")
+        return indicators
+    
+    def _compute_pattern_hash(self, message: str) -> str:
+        """Create semantic hash for caching similar messages"""
+        normalized = re.sub(r'\\d+', 'NUM', message)
+        normalized = re.sub(r'\\b[A-Z][a-z]+\\b', 'NAME', normalized)
+        return hashlib.md5(normalized.encode()).hexdigest()[:16]
+```
+
+## 8. src/scaipot/storage/db.py
+```python
+"""Database Models and Operations"""
+
+import logging
+from datetime import datetime
+from sqlalchemy import Column, String, Text, DateTime, JSON, create_engine
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+from sqlalchemy.orm import declarative_base
+
+logger = logging.getLogger(__name__)
+
+Base = declarative_base()
+
+
+class ConversationLog(Base):
+    """Database model for conversation logs"""
+    __tablename__ = "conversation_logs"
+    
+    id = Column(String, primary_key=True)
+    sender_id = Column(String, index=True)
+    platform = Column(String)
+    category = Column(String)
+    message = Column(Text)
+    response = Column(Text)
+    fraud_indicators = Column(JSON)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class AlertLog(Base):
+    """Database model for security alerts"""
+    __tablename__ = "alert_logs"
+    
+    id = Column(String, primary_key=True)
+    sender_id = Column(String, index=True)
+    platform = Column(String)
+    alert_type = Column(String)
+    message = Column(Text)
+    severity = Column(String)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class Database:
+    """Database connection and operations manager"""
+    
+    def __init__(self, database_url: str):
+        self.database_url = database_url
+        self.engine = None
+        self.session_maker = None
+    
+    async def connect(self) -> None:
+        """Connect to database"""
+        self.engine = create_async_engine(
+            self.database_url,
+            echo=False,
+            pool_size=20,
+            max_overflow=40
+        )
+        self.session_maker = async_sessionmaker(
+            self.engine,
+            class_=AsyncSession,
+            expire_on_commit=False
+        )
+        
+        async with self.engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        
+        logger.info("✓ Database connected and initialized")
+    
+    async def disconnect(self) -> None:
+        """Close database connection"""
+        await self.engine.dispose()
+        logger.info("✓ Database disconnected")
+    
+    async def log_conversation(
+        self,
+        sender_id: str,
+        platform: str,
+        category: str,
+        message: str,
+        response: str,
+        fraud_indicators: dict
+    ) -> None:
+        """Log conversation to database"""
+        async with self.session_maker() as session:
+            log = ConversationLog(
+                id=f"{sender_id}_{datetime.utcnow().timestamp()}",
+                sender_id=sender_id,
+                platform=platform,
+                category=category,
+                message=message,
+                response=response,
+                fraud_indicators=fraud_indicators
+            )
+            session.add(log)
+            await session.commit()
+    
+    async def create_alert(
+        self,
+        sender_id: str,
+        platform: str,
+        alert_type: str,
+        message: str,
+        severity: str
+    ) -> None:
+        """Create security alert"""
+        async with self.session_maker() as session:
+            alert = AlertLog(
+                id=f"alert_{sender_id}_{datetime.utcnow().timestamp()}",
+                sender_id=sender_id,
+                platform=platform,
+                alert_type=alert_type,
+                message=message,
+                severity=severity
+            )
+            session.add(alert)
+            await session.commit()
+            logger.info(f"Alert created: {alert.id}")
+```
+
+## 9. src/scaipot/config/config.py
+```python
+"""SCAIPOT Configuration Management"""
+
+import os
+from dataclasses import dataclass
+from dotenv import load_dotenv
+
+load_dotenv()
+
+
+@dataclass
+class SCaipotConfig:
+    """SCAIPOT configuration"""
+    
+    # Database
+    database_url: str = os.getenv(
+        "DATABASE_URL",
+        "postgresql://scaipot:password@localhost/scaipot"
+    )
+    
+    # Redis
+    redis_url: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+    
+    # MCP-Prompts
+    mcp_prompts_url: str = os.getenv("MCP_PROMPTS_URL", "http://localhost:3000")
+    mcp_prompts_api_key: str = os.getenv("MCP_PROMPTS_API_KEY", "")
+    
+    # Claude API
+    anthropic_api_key: str = os.getenv("ANTHROPIC_API_KEY", "")
+    claude_model: str = os.getenv("CLAUDE_MODEL", "claude-3-5-sonnet-20241022")
+    
+    # Telegram
+    telegram_enabled: bool = os.getenv("TELEGRAM_ENABLED", "true").lower() == "true"
+    telegram_bot_token: str = os.getenv("TELEGRAM_BOT_TOKEN", "")
+    
+    # Signal
+    signal_enabled: bool = os.getenv("SIGNAL_ENABLED", "false").lower() == "true"
+    signal_phone_number: str = os.getenv("SIGNAL_PHONE_NUMBER", "")
+    
+    # Admin
+    admin_slack_webhook: str = os.getenv("ADMIN_SLACK_WEBHOOK", "")
+    admin_discord_webhook: str = os.getenv("ADMIN_DISCORD_WEBHOOK", "")
+    
+    # Logging
+    log_level: str = os.getenv("LOG_LEVEL", "INFO")
+    debug: bool = os.getenv("DEBUG", "false").lower() == "true"
+```
+
+## 10. src/scaipot/cli.py
+```python
+"""Command-Line Interface"""
+
+import asyncio
+import logging
+import click
+from click_rich.decorator import pass_info
+from rich.console import Console
+
+from scaipot.main import SCAIPOT
+from scaipot.config.config import SCaipotConfig
+from scaipot.storage.db import Database
+from scaipot.mcp_integration.mcp_client import MCPPromptsClient
+from scaipot.llm_engine.claude_client import ClaudeClient
+
+logger = logging.getLogger(__name__)
+console = Console()
+
+
+@click.group()
+@click.version_option()
+def cli():
+    """SCAIPOT - AI-Powered Cryptocurrency Scammer Honeypot"""
+    logging.basicConfig(level=logging.INFO)
+
+
+@cli.command()
+def init():
+    """Initialize SCAIPOT configuration"""
+    console.print("[bold green]Initializing SCAIPOT...[/bold green]")
+    
+    config = SCaipotConfig()
+    
+    console.print(f"✓ Database URL: {config.database_url}")
+    console.print(f"✓ MCP-Prompts URL: {config.mcp_prompts_url}")
+    console.print(f"✓ Telegram Enabled: {config.telegram_enabled}")
+    console.print(f"✓ Signal Enabled: {config.signal_enabled}")
+    
+    console.print("[bold green]✓ SCAIPOT initialized successfully![/bold green]")
+
+
+@cli.command()
+def start():
+    """Start SCAIPOT honeypots"""
+    console.print("[bold green]Starting SCAIPOT honeypots...[/bold green]")
+    
+    config = SCaipotConfig()
+    
+    async def run():
+        db = Database(config.database_url)
+        mcp_client = MCPPromptsClient(config.mcp_prompts_url, config.mcp_prompts_api_key)
+        llm_engine = ClaudeClient(config.anthropic_api_key, config.claude_model)
+        
+        scaipot = SCAIPOT(
+            config=config,
+            db=db,
+            mcp_client=mcp_client,
+            llm_engine=llm_engine
+        )
+        
+        await scaipot.initialize()
+        await scaipot.start()
+    
+    asyncio.run(run())
+
+
+if __name__ == "__main__":
+    cli()
+```
+
+## 11-20. Additional Modules (Behavior Implementations)
+
+The following modules are also required:
+- `src/scaipot/behaviors/url_clicker.py` - Simulate URL clicking
+- `src/scaipot/behaviors/vm_manager.py` - Spawn honeypot VMs  
+- `src/scaipot/behaviors/blockchain_monitor.py` - Track BTC wallets
+- `src/scaipot/bots/signal_bot.py` - Signal-specific implementation
+- `src/scaipot/reporting/alerts.py` - Admin alerting system
+- `src/scaipot/reporting/bitcoin_whoswho.py` - Auto-reporting
+
+---
+
+## Testing Suite
+
+### tests/conftest.py
+```python
+import pytest
+import asyncio
+from unittest.mock import AsyncMock, MagicMock
+
+@pytest.fixture
+def event_loop():
+    loop = asyncio.get_event_loop_policy().new_event_loop()
+    yield loop
+    loop.close()
+
+@pytest.fixture
+def mock_mcp_client():
+    client = AsyncMock()
+    client.get_category_prompt.return_value = {
+        "category": "bitcoin_investment",
+        "system_prompt": "You are a curious investor...",
+        "response_templates": {}
+    }
+    return client
+
+@pytest.fixture
+def mock_claude_client():
+    client = AsyncMock()
+    client.generate_response.return_value = "That sounds interesting! Tell me more."
+    return client
+
+@pytest.fixture
+def mock_database():
+    db = AsyncMock()
+    db.log_conversation = AsyncMock()
+    db.create_alert = AsyncMock()
+    return db
+```
+
+---
+
+## Documentation Files
+
+All documentation files (README_CZ.md, SETUP.md, ARCHITECTURE.md, etc.) should be created in `docs/` directory with similar structure and comprehensive coverage in both English and Czech.
+
+---
+
+**Status**: Ready for GitHub upload to `sparesparrow/scaipot`
+**Next Steps**:
+1. Complete remaining behavior modules (VM, blockchain, URL clicker)
+2. Add integration tests
+3. Create documentation
+4. Set up GitHub Actions CI/CD
+5. Deploy alpha to production environment

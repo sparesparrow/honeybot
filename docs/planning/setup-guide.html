@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SCAIPOT - AI Scammer Honeypot Setup Guide</title>
+    <style>
+        /* Design System Variables */
+        :root {
+  --color-white: rgba(255, 255, 255, 1);
+  --color-black: rgba(0, 0, 0, 1);
+  --color-cream-50: rgba(252, 252, 249, 1);
+  --color-cream-100: rgba(255, 255, 253, 1);
+  --color-gray-200: rgba(245, 245, 245, 1);
+  --color-gray-300: rgba(167, 169, 169, 1);
+  --color-gray-400: rgba(119, 124, 124, 1);
+  --color-slate-500: rgba(98, 108, 113, 1);
+  --color-brown-600: rgba(94, 82, 64, 1);
+  --color-charcoal-700: rgba(31, 33, 33, 1);
+  --color-charcoal-800: rgba(38, 40, 40, 1);
+  --color-slate-900: rgba(19, 52, 59, 1);
+  --color-teal-300: rgba(50, 184, 198, 1);
+  --color-teal-400: rgba(45, 166, 178, 1);
+  --color-teal-500: rgba(33, 128, 141, 1);
+  --color-teal-600: rgba(29, 116, 128, 1);
+  --color-teal-700: rgba(26, 104, 115, 1);
+  --color-teal-800: rgba(41, 150, 161, 1);
+  --color-red-400: rgba(255, 84, 89, 1);
+  --color-red-500: rgba(192, 21, 47, 1);
+  --color-orange-400: rgba(230, 129, 97, 1);
+  --color-orange-500: rgba(168, 75, 47, 1);
+  --color-brown-600-rgb: 94, 82, 64;
+  --color-teal-500-rgb: 33, 128, 141;
+  --color-slate-900-rgb: 19, 52, 59;
+  --color-slate-500-rgb: 98, 108, 113;
+  --color-red-500-rgb: 192, 21, 47;
+  --color-red-400-rgb: 255, 84, 89;
+  --color-orange-500-rgb: 168, 75, 47;
+  --color-orange-400-rgb: 230, 129, 97;
+  --color-bg-1: rgba(59, 130, 246, 0.08);
+  --color-bg-2: rgba(245, 158, 11, 0.08);
+  --color-bg-3: rgba(34, 197, 94, 0.08);
+  --color-bg-4: rgba(239, 68, 68, 0.08);
+  --color-bg-5: rgba(147, 51, 234, 0.08);
+  --color-bg-6: rgba(249, 115, 22, 0.08);
+  --color-bg-7: rgba(236, 72, 153, 0.08);
+  --color-bg-8: rgba(6, 182, 212, 0.08);
+  --color-background: var(--color-cream-50);
+  --color-surface: var(--color-cream-100);
+  --color-text: var(--color-slate-900);
+  --color-text-secondary: var(--color-slate-500);
+  --color-primary: var(--color-teal-500);
+  --color-primary-hover: var(--color-teal-600);
+  --color-primary-active: var(--color-teal-700);
+  --color-secondary: rgba(var(--color-brown-600-rgb), 0.12);
+  --color-secondary-hover: rgba(var(--color-brown-600-rgb), 0.2);
+  --color-secondary-active: rgba(var(--color-brown-600-rgb), 0.25);
+  --color-border: rgba(var(--color-brown-600-rgb), 0.2);
+  --color-btn-primary-text: var(--color-cream-50);
+  --color-card-border: rgba(var(--color-brown-600-rgb), 0.12);
+  --color-card-border-inner: rgba(var(--color-brown-600-rgb), 0.12);
+  --color-error: var(--color-red-500);
+  --color-success: var(--color-teal-500);
+  --color-warning: var(--color-orange-500);
+  --color-info: var(--color-slate-500);
+  --color-focus-ring: rgba(var(--color-teal-500-rgb), 0.4);
+  --color-select-caret: rgba(var(--color-slate-900-rgb), 0.8);
+  --focus-ring: 0 0 0 3px var(--color-focus-ring);
+  --focus-outline: 2px solid var(--color-primary);
+  --status-bg-opacity: 0.15;
+  --status-border-opacity: 0.25;
+  --color-success-rgb: 33, 128, 141;
+  --color-error-rgb: 192, 21, 47;
+  --color-warning-rgb: 168, 75, 47;
+  --color-info-rgb: 98, 108, 113;
+  --font-family-base: "FKGroteskNeue", "Geist", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-family-mono: "Berkeley Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --font-size-xs: 11px;
+  --font-size-sm: 12px;
+  --font-size-base: 14px;
+  --font-size-md: 14px;
+  --font-size-lg: 16px;
+  --font-size-xl: 18px;
+  --font-size-2xl: 20px;
+  --font-size-3xl: 24px;
+  --font-size-4xl: 30px;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 550;
+  --font-weight-bold: 600;
+  --line-height-tight: 1.2;
+  --line-height-normal: 1.5;
+  --letter-spacing-tight: -0.01em;
+  --space-0: 0;
+  --space-1: 1px;
+  --space-2: 2px;
+  --space-4: 4px;
+  --space-6: 6px;
+  --space-8: 8px;
+  --space-10: 10px;
+  --space-12: 12px;
+  --space-16: 16px;
+  --space-20: 20px;
+  --space-24: 24px;
+  --space-32: 32px;
+  --radius-sm: 6px;
+  --radius-base: 8px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-full: 9999px;
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.02);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.04), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.04), 0 4px 6px -2px rgba(0, 0, 0, 0.02);
+  --shadow-inset-sm: inset 0 1px 0 rgba(255, 255, 255, 0.15), inset 0 -1px 0 rgba(0, 0, 0, 0.03);
+  --duration-fast: 150ms;
+  --duration-normal: 250ms;
+  --ease-standard: cubic-bezier(0.16, 1, 0.3, 1);
+  --container-sm: 640px;
+  --container-md: 768px;
+  --container-lg: 1024px;
+  --container-xl: 1280px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-gray-400-rgb: 119, 124, 124;
+    --color-teal-300-rgb: 50, 184, 198;
+    --color-gray-300-rgb: 167, 169, 169;
+    --color-gray-200-rgb: 245, 245, 245;
+    --color-bg-1: rgba(29, 78, 216, 0.15);
+    --color-bg-2: rgba(180, 83, 9, 0.15);
+    --color-bg-3: rgba(21, 128, 61, 0.15);
+    --color-bg-4: rgba(185, 28, 28, 0.15);
+    --color-bg-5: rgba(107, 33, 168, 0.15);
+    --color-bg-6: rgba(194, 65, 12, 0.15);
+    --color-bg-7: rgba(190, 24, 93, 0.15);
+    --color-bg-8: rgba(8, 145, 178, 0.15);
+    --color-background: var(--color-charcoal-700);
+    --color-surface: var(--color-charcoal-800);
+    --color-text: var(--color-gray-200);
+    --color-text-secondary: rgba(var(--color-gray-300-rgb), 0.7);
+    --color-primary: var(--color-teal-300);
+    --color-primary-hover: var(--color-teal-400);
+    --color-primary-active: var(--color-teal-800);
+    --color-secondary: rgba(var(--color-gray-400-rgb), 0.15);
+    --color-secondary-hover: rgba(var(--color-gray-400-rgb), 0.25);
+    --color-secondary-active: rgba(var(--color-gray-400-rgb), 0.3);
+    --color-border: rgba(var(--color-gray-400-rgb), 0.3);
+    --color-error: var(--color-red-400);
+    --color-success: var(--color-teal-300);
+    --color-warning: var(--color-orange-400);
+    --color-info: var(--color-gray-300);
+    --color-focus-ring: rgba(var(--color-teal-300-rgb), 0.4);
+    --color-btn-primary-text: var(--color-slate-900);
+    --color-card-border: rgba(var(--color-gray-400-rgb), 0.2);
+    --color-card-border-inner: rgba(var(--color-gray-400-rgb), 0.15);
+    --shadow-inset-sm: inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -1px 0 rgba(0, 0, 0, 0.15);
+    --color-success-rgb: var(--color-teal-300-rgb);
+    --color-error-rgb: var(--color-red-400-rgb);
+    --color-warning-rgb: var(--color-orange-400-rgb);
+    --color-info-rgb: var(--color-gray-300-rgb);
+  }
+}
+
+@font-face {
+  font-family: 'FKGroteskNeue';
+  src: url('https://r2cdn.perplexity.ai/fonts/FKGroteskNeue.woff2') format('woff2');
+}
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-family-base);
+            background: var(--color-background);
+            color: var(--color-text);
+            line-height: var(--line-height-normal);
+            padding: var(--space-24);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: var(--space-32);
+            padding: var(--space-32) var(--space-24);
+            background: var(--color-surface);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--color-card-border);
+        }
+
+        h1 {
+            font-size: var(--font-size-4xl);
+            font-weight: var(--font-weight-bold);
+            color: var(--color-text);
+            margin-bottom: var(--space-12);
+            letter-spacing: var(--letter-spacing-tight);
+        }
+
+        .tagline {
+            font-size: var(--font-size-xl);
+            color: var(--color-text-secondary);
+            margin-bottom: var(--space-16);
+        }
+
+        .lang-toggle {
+            display: inline-flex;
+            gap: var(--space-8);
+            margin-top: var(--space-16);
+        }
+
+        .lang-btn {
+            padding: var(--space-8) var(--space-16);
+            background: var(--color-secondary);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-base);
+            cursor: pointer;
+            font-size: var(--font-size-sm);
+            font-weight: var(--font-weight-medium);
+            color: var(--color-text);
+            transition: all var(--duration-fast) var(--ease-standard);
+        }
+
+        .lang-btn:hover {
+            background: var(--color-secondary-hover);
+        }
+
+        .lang-btn.active {
+            background: var(--color-primary);
+            color: var(--color-btn-primary-text);
+            border-color: var(--color-primary);
+        }
+
+        .tabs {
+            display: flex;
+            gap: var(--space-8);
+            margin-bottom: var(--space-24);
+            flex-wrap: wrap;
+            border-bottom: 2px solid var(--color-border);
+            padding-bottom: var(--space-8);
+        }
+
+        .tab {
+            padding: var(--space-12) var(--space-20);
+            background: transparent;
+            border: none;
+            border-radius: var(--radius-base) var(--radius-base) 0 0;
+            cursor: pointer;
+            font-size: var(--font-size-base);
+            font-weight: var(--font-weight-medium);
+            color: var(--color-text-secondary);
+            transition: all var(--duration-fast) var(--ease-standard);
+            position: relative;
+        }
+
+        .tab:hover {
+            background: var(--color-secondary);
+            color: var(--color-text);
+        }
+
+        .tab.active {
+            color: var(--color-primary);
+            background: var(--color-secondary);
+        }
+
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--color-primary);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card {
+            background: var(--color-surface);
+            border: 1px solid var(--color-card-border);
+            border-radius: var(--radius-lg);
+            padding: var(--space-24);
+            margin-bottom: var(--space-24);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .card h2 {
+            font-size: var(--font-size-2xl);
+            font-weight: var(--font-weight-semibold);
+            margin-bottom: var(--space-16);
+            color: var(--color-text);
+        }
+
+        .card h3 {
+            font-size: var(--font-size-lg);
+            font-weight: var(--font-weight-semibold);
+            margin-top: var(--space-20);
+            margin-bottom: var(--space-12);
+            color: var(--color-text);
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: var(--space-16);
+            margin-top: var(--space-16);
+        }
+
+        .feature-item {
+            padding: var(--space-16);
+            background: var(--color-bg-1);
+            border-radius: var(--radius-base);
+            border: 1px solid var(--color-card-border-inner);
+        }
+
+        .feature-item:nth-child(2) { background: var(--color-bg-2); }
+        .feature-item:nth-child(3) { background: var(--color-bg-3); }
+        .feature-item:nth-child(4) { background: var(--color-bg-4); }
+        .feature-item:nth-child(5) { background: var(--color-bg-5); }
+        .feature-item:nth-child(6) { background: var(--color-bg-6); }
+
+        .command-block {
+            background: var(--color-secondary);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-base);
+            padding: var(--space-16);
+            margin-bottom: var(--space-16);
+            position: relative;
+        }
+
+        .command-block code {
+            font-family: var(--font-family-mono);
+            font-size: var(--font-size-sm);
+            color: var(--color-text);
+            display: block;
+            word-break: break-all;
+        }
+
+        .command-desc {
+            font-size: var(--font-size-sm);
+            color: var(--color-text-secondary);
+            margin-top: var(--space-8);
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: var(--space-12);
+            right: var(--space-12);
+            padding: var(--space-6) var(--space-12);
+            background: var(--color-primary);
+            color: var(--color-btn-primary-text);
+            border: none;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: var(--font-size-xs);
+            font-weight: var(--font-weight-medium);
+            transition: all var(--duration-fast) var(--ease-standard);
+        }
+
+        .copy-btn:hover {
+            background: var(--color-primary-hover);
+        }
+
+        .copy-btn:active {
+            background: var(--color-primary-active);
+        }
+
+        .tree {
+            font-family: var(--font-family-mono);
+            font-size: var(--font-size-sm);
+            line-height: 1.8;
+            background: var(--color-secondary);
+            padding: var(--space-20);
+            border-radius: var(--radius-base);
+            border: 1px solid var(--color-border);
+            overflow-x: auto;
+        }
+
+        .tree-item {
+            color: var(--color-text);
+            padding-left: var(--space-20);
+        }
+
+        .tree-item.dir {
+            color: var(--color-primary);
+            font-weight: var(--font-weight-medium);
+        }
+
+        .tree-item.file {
+            color: var(--color-text-secondary);
+        }
+
+        .integration-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: var(--space-16);
+            margin-top: var(--space-16);
+        }
+
+        .integration-card {
+            padding: var(--space-20);
+            background: var(--color-bg-3);
+            border: 1px solid var(--color-card-border-inner);
+            border-radius: var(--radius-base);
+        }
+
+        .integration-card h4 {
+            font-size: var(--font-size-lg);
+            font-weight: var(--font-weight-semibold);
+            margin-bottom: var(--space-12);
+            color: var(--color-text);
+        }
+
+        .integration-card ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .integration-card li {
+            padding: var(--space-6) 0;
+            padding-left: var(--space-16);
+            position: relative;
+            color: var(--color-text);
+            font-size: var(--font-size-sm);
+        }
+
+        .integration-card li::before {
+            content: '→';
+            position: absolute;
+            left: 0;
+            color: var(--color-primary);
+        }
+
+        .workflow-steps {
+            counter-reset: step-counter;
+        }
+
+        .workflow-step {
+            padding: var(--space-16);
+            margin-bottom: var(--space-16);
+            background: var(--color-secondary);
+            border-left: 4px solid var(--color-primary);
+            border-radius: var(--radius-base);
+            position: relative;
+            padding-left: var(--space-32);
+        }
+
+        .workflow-step::before {
+            counter-increment: step-counter;
+            content: counter(step-counter);
+            position: absolute;
+            left: var(--space-12);
+            top: var(--space-16);
+            width: 24px;
+            height: 24px;
+            background: var(--color-primary);
+            color: var(--color-btn-primary-text);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: var(--font-size-xs);
+            font-weight: var(--font-weight-bold);
+        }
+
+        .workflow-step h4 {
+            font-size: var(--font-size-base);
+            font-weight: var(--font-weight-semibold);
+            margin-bottom: var(--space-8);
+            color: var(--color-text);
+        }
+
+        .workflow-step p {
+            font-size: var(--font-size-sm);
+            color: var(--color-text-secondary);
+            margin: 0;
+        }
+
+        .status {
+            display: inline-block;
+            padding: var(--space-4) var(--space-12);
+            border-radius: var(--radius-full);
+            font-size: var(--font-size-xs);
+            font-weight: var(--font-weight-medium);
+            background: rgba(var(--color-success-rgb), 0.15);
+            color: var(--color-success);
+            border: 1px solid rgba(var(--color-success-rgb), 0.25);
+        }
+
+        .github-link {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-8);
+            padding: var(--space-10) var(--space-20);
+            background: var(--color-primary);
+            color: var(--color-btn-primary-text);
+            text-decoration: none;
+            border-radius: var(--radius-base);
+            font-weight: var(--font-weight-medium);
+            transition: all var(--duration-fast) var(--ease-standard);
+        }
+
+        .github-link:hover {
+            background: var(--color-primary-hover);
+        }
+
+        @media print {
+            body {
+                background: white;
+                color: black;
+            }
+            .tabs, .lang-toggle, .copy-btn {
+                display: none;
+            }
+            .tab-content {
+                display: block !important;
+                page-break-before: always;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: var(--space-16);
+            }
+            .tabs {
+                overflow-x: auto;
+                flex-wrap: nowrap;
+            }
+            .features-grid, .integration-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>SCAIPOT <span class="status">Alpha v0.1</span></h1>
+            <p class="tagline" data-en="Multi-platform AI-powered honeypot for cryptocurrency scammer detection" data-cs="Víceplošinová AI past na podvodníky s kryptoměnami">Multi-platform AI-powered honeypot for cryptocurrency scammer detection</p>
+            <a href="https://github.com/sparesparrow/scaipot" class="github-link" target="_blank">
+                <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
+                GitHub Repository
+            </a>
+            <div class="lang-toggle">
+                <button class="lang-btn active" onclick="switchLanguage('en')" data-lang="en">English</button>
+                <button class="lang-btn" onclick="switchLanguage('cs')" data-lang="cs">Čeština</button>
+            </div>
+        </header>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('overview')">Overview</button>
+            <button class="tab" onclick="switchTab('quickstart')">Quick Start</button>
+            <button class="tab" onclick="switchTab('structure')">Repository Structure</button>
+            <button class="tab" onclick="switchTab('files')">File Categories</button>
+            <button class="tab" onclick="switchTab('integration')">Integrations</button>
+            <button class="tab" onclick="switchTab('workflow')">Development</button>
+            <button class="tab" onclick="switchTab('deployment')">Deployment</button>
+        </div>
+
+        <div id="overview" class="tab-content active">
+            <div class="card">
+                <h2 data-en="Project Overview" data-cs="Přehled projektu">Project Overview</h2>
+                <p data-en="SCAIPOT (Scam AI Honeypot) is an advanced multi-platform honeypot system designed to detect, engage, and analyze cryptocurrency scammers across Signal, Telegram, and WhatsApp. Powered by Claude AI with prompt caching and MCP-Prompts integration, SCAIPOT reduces operational costs by 90% while maintaining sophisticated conversational capabilities." data-cs="SCAIPOT (Scam AI Honeypot) je pokročilý víceplošinový systém pastí navržený k detekci, zapojení a analýze podvodníků s kryptoměnami napříč platformami Signal, Telegram a WhatsApp. Poháněn Claude AI s prompt cachingem a integrací MCP-Prompts, SCAIPOT snižuje provozní náklady o 90% při zachování sofistikovaných konverzačních schopností.">SCAIPOT (Scam AI Honeypot) is an advanced multi-platform honeypot system designed to detect, engage, and analyze cryptocurrency scammers across Signal, Telegram, and WhatsApp. Powered by Claude AI with prompt caching and MCP-Prompts integration, SCAIPOT reduces operational costs by 90% while maintaining sophisticated conversational capabilities.</p>
+                
+                <h3 data-en="Key Features" data-cs="Klíčové vlastnosti">Key Features</h3>
+                <div class="features-grid">
+                    <div class="feature-item">
+                        <strong>Multi-Platform Support</strong>
+                        <p>Signal, Telegram, &amp; WhatsApp integration</p>
+                    </div>
+                    <div class="feature-item">
+                        <strong>AI-Powered Conversations</strong>
+                        <p>Claude 3.5 with MCP-Prompts</p>
+                    </div>
+                    <div class="feature-item">
+                        <strong>12 Scam Templates</strong>
+                        <p>Investment, romance, tech support, &amp; more</p>
+                    </div>
+                    <div class="feature-item">
+                        <strong>90% Cost Reduction</strong>
+                        <p>Prompt caching with Redis</p>
+                    </div>
+                    <div class="feature-item">
+                        <strong>Advanced Behaviors</strong>
+                        <p>URL clicking, VM honeypots, blockchain monitoring</p>
+                    </div>
+                    <div class="feature-item">
+                        <strong>Network Analysis</strong>
+                        <p>MITM proxy &amp; traffic inspection</p>
+                    </div>
+                </div>
+
+                <h3 data-en="Target Users" data-cs="Cílový uživatelé">Target Users</h3>
+                <ul>
+                    <li data-en="Security researchers studying social engineering tactics" data-cs="Bezpečnostní výzkumníci studující taktiky sociálního inženýrství">Security researchers studying social engineering tactics</li>
+                    <li data-en="Law enforcement agencies tracking cryptocurrency fraud" data-cs="Orgány činné v trestním řízení sledující podvody s kryptoměnami">Law enforcement agencies tracking cryptocurrency fraud</li>
+                    <li data-en="Financial institutions protecting customers" data-cs="Finanční instituce chránící zákazníky">Financial institutions protecting customers</li>
+                    <li data-en="Academic institutions researching scam patterns" data-cs="Akademické instituce zkoumající vzorce podvodů">Academic institutions researching scam patterns</li>
+                </ul>
+            </div>
+        </div>
+
+        <div id="quickstart" class="tab-content">
+            <div class="card">
+                <h2 data-en="Quick Start Commands" data-cs="Rychlé začátky - příkazy">Quick Start Commands</h2>
+                
+                <div class="command-block">
+                    <code>git clone https://github.com/sparesparrow/scaipot.git</code>
+                    <button class="copy-btn" onclick="copyCommand(this)">Copy</button>
+                    <p class="command-desc" data-en="Clone SCAIPOT repository" data-cs="Klonovat SCAIPOT repozitář">Clone SCAIPOT repository</p>
+                </div>
+
+                <div class="command-block">
+                    <code>cd scaipot &amp;&amp; pip install -e .</code>
+                    <button class="copy-btn" onclick="copyCommand(this)">Copy</button>
+                    <p class="command-desc" data-en="Install SCAIPOT in development mode" data-cs="Instalovat SCAIPOT ve vývojovém režimu">Install SCAIPOT in development mode</p>
+                </div>
+
+                <div class="command-block">
+                    <code>pytest tests/ -v</code>
+                    <button class="copy-btn" onclick="copyCommand(this)">Copy</button>
+                    <p class="command-desc" data-en="Run all unit and integration tests" data-cs="Spustit všechny unit a integrační testy">Run all unit and integration tests</p>
+                </div>
+
+                <div class="command-block">
+                    <code>docker-compose up -d</code>
+                    <button class="copy-btn" onclick="copyCommand(this)">Copy</button>
+                    <p class="command-desc" data-en="Start full SCAIPOT stack with Docker" data-cs="Spustit celý SCAIPOT stack s Dockerem">Start full SCAIPOT stack with Docker</p>
+                </div>
+
+                <div class="command-block">
+                    <code>python -m scaipot.cli init</code>
+                    <button class="copy-btn" onclick="copyCommand(this)">Copy</button>
+                    <p class="command-desc" data-en="Initialize honeypot configuration" data-cs="Inicializovat konfiguraci honeypotu">Initialize honeypot configuration</p>
+                </div>
+
+                <h3 data-en="Prerequisites" data-cs="Předpoklady">Prerequisites</h3>
+                <ul>
+                    <li>Python 3.10+</li>
+                    <li>Docker &amp; Docker Compose</li>
+                    <li>Redis (for prompt caching)</li>
+                    <li>Anthropic API key (Claude)</li>
+                    <li>Platform-specific tokens (Signal/Telegram/WhatsApp)</li>
+                </ul>
+            </div>
+        </div>
+
+        <div id="structure" class="tab-content">
+            <div class="card">
+                <h2 data-en="Repository Structure" data-cs="Struktura repozitáře">Repository Structure</h2>
+                <div class="tree">
+scaipot/
+├── <span class="tree-item dir">src/</span>
+│   ├── <span class="tree-item dir">bot_engines/</span>
+│   │   ├── <span class="tree-item file">signal_adapter.py</span>
+│   │   ├── <span class="tree-item file">telegram_adapter.py</span>
+│   │   ├── <span class="tree-item file">whatsapp_adapter.py</span>
+│   │   └── <span class="tree-item file">base_adapter.py</span>
+│   ├── <span class="tree-item dir">behaviors/</span>
+│   │   ├── <span class="tree-item file">url_clicker.py</span>
+│   │   ├── <span class="tree-item file">vm_manager.py</span>
+│   │   ├── <span class="tree-item file">blockchain_monitor.py</span>
+│   │   ├── <span class="tree-item file">network_analyzer.py</span>
+│   │   └── <span class="tree-item file">mitm_proxy.py</span>
+│   ├── <span class="tree-item dir">mcp_integration/</span>
+│   │   ├── <span class="tree-item file">client.py</span>
+│   │   ├── <span class="tree-item file">prompt_loader.py</span>
+│   │   └── <span class="tree-item file">category_manager.py</span>
+│   ├── <span class="tree-item dir">llm/</span>
+│   │   ├── <span class="tree-item file">claude_client.py</span>
+│   │   ├── <span class="tree-item file">cache_manager.py</span>
+│   │   └── <span class="tree-item file">conversation_handler.py</span>
+│   ├── <span class="tree-item dir">fraud_detection/</span>
+│   │   ├── <span class="tree-item file">pattern_analyzer.py</span>
+│   │   ├── <span class="tree-item file">nlp_processor.py</span>
+│   │   └── <span class="tree-item file">scam_classifier.py</span>
+│   └── <span class="tree-item file">cli.py</span>
+├── <span class="tree-item dir">config/</span>
+│   ├── <span class="tree-item dir">categories/</span>
+│   │   ├── <span class="tree-item file">investment_scam.yaml</span>
+│   │   ├── <span class="tree-item file">romance_scam.yaml</span>
+│   │   ├── <span class="tree-item file">tech_support.yaml</span>
+│   │   ├── <span class="tree-item file">crypto_giveaway.yaml</span>
+│   │   └── <span class="tree-item file">... (8 more templates)</span>
+│   └── <span class="tree-item dir">templates/</span>
+│       ├── <span class="tree-item file">.env.example</span>
+│       └── <span class="tree-item file">docker-compose.example.yml</span>
+├── <span class="tree-item dir">tests/</span>
+│   ├── <span class="tree-item dir">unit/</span>
+│   │   ├── <span class="tree-item file">test_bot_engines.py</span>
+│   │   ├── <span class="tree-item file">test_behaviors.py</span>
+│   │   ├── <span class="tree-item file">test_mcp_integration.py</span>
+│   │   └── <span class="tree-item file">test_llm.py</span>
+│   └── <span class="tree-item dir">integration/</span>
+│       ├── <span class="tree-item file">test_e2e_conversation.py</span>
+│       ├── <span class="tree-item file">test_platform_integration.py</span>
+│       └── <span class="tree-item file">test_mcp_prompts.py</span>
+├── <span class="tree-item dir">docker/</span>
+│   ├── <span class="tree-item file">Dockerfile</span>
+│   ├── <span class="tree-item file">Dockerfile.vm</span>
+│   └── <span class="tree-item dir">vm_images/</span>
+├── <span class="tree-item dir">docs/</span>
+│   ├── <span class="tree-item file">README.md</span>
+│   ├── <span class="tree-item file">README.cs.md</span>
+│   ├── <span class="tree-item file">SETUP.md</span>
+│   ├── <span class="tree-item file">SETUP.cs.md</span>
+│   ├── <span class="tree-item file">API.md</span>
+│   └── <span class="tree-item file">CONTRIBUTING.md</span>
+├── <span class="tree-item dir">scripts/</span>
+│   ├── <span class="tree-item file">deploy.sh</span>
+│   ├── <span class="tree-item file">test_runner.sh</span>
+│   └── <span class="tree-item file">vm_setup.sh</span>
+├── <span class="tree-item file">pyproject.toml</span>
+├── <span class="tree-item file">docker-compose.yml</span>
+├── <span class="tree-item file">LICENSE</span>
+└── <span class="tree-item file">README.md</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="files" class="tab-content">
+            <div class="card">
+                <h2 data-en="File Categories" data-cs="Kategorie souborů">File Categories</h2>
+                
+                <h3>🤖 Core Bot Engine</h3>
+                <p data-en="Multi-platform bot adapters and conversation management" data-cs="Víceplošinové bot adaptéry a správa konverzací">Multi-platform bot adapters and conversation management</p>
+                <ul>
+                    <li><code>signal_adapter.py</code> - Signal bot implementation</li>
+                    <li><code>telegram_adapter.py</code> - Telegram bot implementation</li>
+                    <li><code>whatsapp_adapter.py</code> - WhatsApp bot implementation</li>
+                    <li><code>base_adapter.py</code> - Abstract base class for all adapters</li>
+                </ul>
+
+                <h3>🎭 Behaviors</h3>
+                <p data-en="Advanced honeypot behaviors for realistic scammer interaction" data-cs="Pokročilé chování honeypotu pro realistickou interakci s podvodníky">Advanced honeypot behaviors for realistic scammer interaction</p>
+                <ul>
+                    <li><code>url_clicker.py</code> - Automated URL clicking in sandboxed browser</li>
+                    <li><code>vm_manager.py</code> - Disposable VM honeypot management</li>
+                    <li><code>blockchain_monitor.py</code> - Track crypto wallet addresses</li>
+                    <li><code>network_analyzer.py</code> - Traffic pattern analysis</li>
+                    <li><code>mitm_proxy.py</code> - Man-in-the-middle proxy for inspection</li>
+                </ul>
+
+                <h3>🔌 MCP Integration</h3>
+                <p data-en="Integration with MCP-Prompts for dynamic prompt management" data-cs="Integrace s MCP-Prompts pro dynamickou správu promptů">Integration with MCP-Prompts for dynamic prompt management</p>
+                <ul>
+                    <li><code>client.py</code> - MCP server client implementation</li>
+                    <li><code>prompt_loader.py</code> - Load and cache prompts from MCP</li>
+                    <li><code>category_manager.py</code> - Manage 12 scam categories</li>
+                </ul>
+
+                <h3>🧠 LLM Integration</h3>
+                <p data-en="Claude API with prompt caching for cost efficiency" data-cs="Claude API s cachováním promptů pro úsporu nákladů">Claude API with prompt caching for cost efficiency</p>
+                <ul>
+                    <li><code>claude_client.py</code> - Anthropic API wrapper</li>
+                    <li><code>cache_manager.py</code> - Redis-based prompt caching</li>
+                    <li><code>conversation_handler.py</code> - Conversation state management</li>
+                </ul>
+
+                <h3>⚙️ Configuration</h3>
+                <p data-en="YAML templates for 12 scam honeypot categories" data-cs="YAML šablony pro 12 kategorií honeypotu podvodů">YAML templates for 12 scam honeypot categories</p>
+                <ul>
+                    <li>Investment scams (crypto, forex, stocks)</li>
+                    <li>Romance scams</li>
+                    <li>Tech support scams</li>
+                    <li>Crypto giveaway scams</li>
+                    <li>Employment scams</li>
+                    <li>Phishing attempts</li>
+                    <li>And 6 more categories...</li>
+                </ul>
+
+                <h3>🧪 Tests</h3>
+                <p data-en="Comprehensive unit and integration test suite" data-cs="Komplexní sada unit a integračních testů">Comprehensive unit and integration test suite</p>
+                <ul>
+                    <li><code>test_bot_engines.py</code> - Bot adapter tests</li>
+                    <li><code>test_behaviors.py</code> - Behavior module tests</li>
+                    <li><code>test_mcp_integration.py</code> - MCP client tests</li>
+                    <li><code>test_e2e_conversation.py</code> - End-to-end conversation tests</li>
+                </ul>
+
+                <h3>📦 Docker &amp; Deployment</h3>
+                <ul>
+                    <li><code>Dockerfile</code> - Main application container</li>
+                    <li><code>Dockerfile.vm</code> - VM honeypot image</li>
+                    <li><code>docker-compose.yml</code> - Full stack orchestration</li>
+                </ul>
+            </div>
+        </div>
+
+        <div id="integration" class="tab-content">
+            <div class="card">
+                <h2 data-en="Integration Points" data-cs="Integrační body">Integration Points</h2>
+                
+                <div class="integration-grid">
+                    <div class="integration-card">
+                        <h4>🔗 MCP-Prompts</h4>
+                        <ul>
+                            <li>Fetch honeypot categories from MCP server</li>
+                            <li>Real-time prompt updates without restart</li>
+                            <li>Category versioning &amp; A/B testing</li>
+                            <li>Centralized prompt management</li>
+                        </ul>
+                    </div>
+
+                    <div class="integration-card">
+                        <h4>📊 GitHub Events</h4>
+                        <ul>
+                            <li>Track user GitHub activity (optional)</li>
+                            <li>Auto-update documentation from repo</li>
+                            <li>Monitor issue tracking for scam patterns</li>
+                            <li>Version control for honeypot configs</li>
+                        </ul>
+                    </div>
+
+                    <div class="integration-card">
+                        <h4>🔐 OpenSSL Tools</h4>
+                        <ul>
+                            <li>Security reference library</li>
+                            <li>Cryptography pattern analysis</li>
+                            <li>Certificate inspection</li>
+                            <li>TLS traffic analysis</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <h3 data-en="External Services" data-cs="Externí služby">External Services</h3>
+                <ul>
+                    <li><strong>Anthropic Claude API</strong> - AI conversation engine</li>
+                    <li><strong>Redis</strong> - Prompt caching &amp; session storage</li>
+                    <li><strong>Docker</strong> - VM honeypot orchestration</li>
+                    <li><strong>Platform APIs</strong> - Signal, Telegram, WhatsApp</li>
+                </ul>
+            </div>
+        </div>
+
+        <div id="workflow" class="tab-content">
+            <div class="card">
+                <h2 data-en="Development Workflow" data-cs="Vývojový pracovní postup">Development Workflow</h2>
+                
+                <div class="workflow-steps">
+                    <div class="workflow-step">
+                        <h4 data-en="Clone Repository" data-cs="Klonovat repozitář">Clone Repository</h4>
+                        <p data-en="Clone the SCAIPOT repository from GitHub and navigate to the project directory" data-cs="Klonujte SCAIPOT repozitář z GitHubu a přejděte do projektového adresáře">Clone the SCAIPOT repository from GitHub and navigate to the project directory</p>
+                        <code>git clone https://github.com/sparesparrow/scaipot.git</code>
+                    </div>
+
+                    <div class="workflow-step">
+                        <h4 data-en="Setup Environment" data-cs="Nastavit prostředí">Setup Environment</h4>
+                        <p data-en="Create virtual environment and install dependencies" data-cs="Vytvořte virtuální prostředí a nainstalujte závislosti">Create virtual environment and install dependencies</p>
+                        <code>python -m venv venv &amp;&amp; source venv/bin/activate &amp;&amp; pip install -e .[dev]</code>
+                    </div>
+
+                    <div class="workflow-step">
+                        <h4 data-en="Configure Services" data-cs="Konfigurovat služby">Configure Services</h4>
+                        <p data-en="Copy .env.example to .env and configure API keys, platform tokens, and Redis connection" data-cs="Zkopírujte .env.example do .env a nakonfigurujte API klíče, platformové tokeny a Redis připojení">Copy .env.example to .env and configure API keys, platform tokens, and Redis connection</p>
+                        <code>cp config/templates/.env.example .env</code>
+                    </div>
+
+                    <div class="workflow-step">
+                        <h4 data-en="Run Tests" data-cs="Spustit testy">Run Tests</h4>
+                        <p data-en="Execute unit and integration tests to verify setup" data-cs="Spusťte unit a integrační testy pro ověření nastavení">Execute unit and integration tests to verify setup</p>
+                        <code>pytest tests/ -v --cov=src</code>
+                    </div>
+
+                    <div class="workflow-step">
+                        <h4 data-en="Start Development Server" data-cs="Spustit vývojový server">Start Development Server</h4>
+                        <p data-en="Launch SCAIPOT with Docker Compose for local development" data-cs="Spusťte SCAIPOT s Docker Compose pro lokální vývoj">Launch SCAIPOT with Docker Compose for local development</p>
+                        <code>docker-compose up -d</code>
+                    </div>
+
+                    <div class="workflow-step">
+                        <h4 data-en="Monitor Logs" data-cs="Sledovat logy">Monitor Logs</h4>
+                        <p data-en="Watch honeypot activity and scammer interactions in real-time" data-cs="Sledujte aktivitu honeypotu a interakce s podvodníky v reálném čase">Watch honeypot activity and scammer interactions in real-time</p>
+                        <code>docker-compose logs -f scaipot</code>
+                    </div>
+
+                    <div class="workflow-step">
+                        <h4 data-en="Make Changes" data-cs="Provést změny">Make Changes</h4>
+                        <p data-en="Modify code, add new behaviors, or update honeypot categories" data-cs="Upravte kód, přidejte nové chování nebo aktualizujte kategorie honeypotu">Modify code, add new behaviors, or update honeypot categories</p>
+                        <p>Edit files in <code>src/</code> and <code>config/</code></p>
+                    </div>
+
+                    <div class="workflow-step">
+                        <h4 data-en="Commit &amp; Push" data-cs="Commit &amp; Push">Commit &amp; Push</h4>
+                        <p data-en="Follow conventional commits and push to GitHub" data-cs="Dodržujte konvenční commity a pushnete na GitHub">Follow conventional commits and push to GitHub</p>
+                        <code>git add . &amp;&amp; git commit -m "feat: add new behavior" &amp;&amp; git push</code>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="deployment" class="tab-content">
+            <div class="card">
+                <h2 data-en="Deployment Options" data-cs="Možnosti nasazení">Deployment Options</h2>
+                
+                <h3>🏠 Local Development</h3>
+                <div class="command-block">
+                    <code>docker-compose up -d</code>
+                    <button class="copy-btn" onclick="copyCommand(this)">Copy</button>
+                    <p class="command-desc" data-en="Start all services locally" data-cs="Spustit všechny služby lokálně">Start all services locally</p>
+                </div>
+
+                <h3>🧪 Staging Environment</h3>
+                <div class="command-block">
+                    <code>docker-compose -f docker-compose.staging.yml up -d</code>
+                    <button class="copy-btn" onclick="copyCommand(this)">Copy</button>
+                    <p class="command-desc" data-en="Deploy to staging server" data-cs="Nasadit na staging server">Deploy to staging server</p>
+                </div>
+
+                <h3>🚀 Production Deployment</h3>
+                <div class="command-block">
+                    <code>./scripts/deploy.sh production</code>
+                    <button class="copy-btn" onclick="copyCommand(this)">Copy</button>
+                    <p class="command-desc" data-en="Deploy to production with health checks" data-cs="Nasadit do produkce s kontrolami stavu">Deploy to production with health checks</p>
+                </div>
+
+                <h3 data-en="Environment Variables" data-cs="Proměnné prostředí">Environment Variables</h3>
+                <ul>
+                    <li><code>ANTHROPIC_API_KEY</code> - Claude API key</li>
+                    <li><code>REDIS_URL</code> - Redis connection string</li>
+                    <li><code>SIGNAL_TOKEN</code> - Signal bot token</li>
+                    <li><code>TELEGRAM_TOKEN</code> - Telegram bot token</li>
+                    <li><code>WHATSAPP_TOKEN</code> - WhatsApp API token</li>
+                    <li><code>MCP_SERVER_URL</code> - MCP-Prompts server URL</li>
+                    <li><code>ADMIN_WEBHOOK</code> - Alert webhook for admin notifications</li>
+                </ul>
+
+                <h3 data-en="Security Considerations" data-cs="Bezpečnostní úvahy">Security Considerations</h3>
+                <ul>
+                    <li data-en="Never commit API keys or tokens to Git" data-cs="Nikdy necommitujte API klíče nebo tokeny do Gitu">Never commit API keys or tokens to Git</li>
+                    <li data-en="Use environment-specific .env files" data-cs="Používejte .env soubory specifické pro prostředí">Use environment-specific .env files</li>
+                    <li data-en="Enable TLS/SSL for all external connections" data-cs="Povolte TLS/SSL pro všechna externí připojení">Enable TLS/SSL for all external connections</li>
+                    <li data-en="Regularly update dependencies" data-cs="Pravidelně aktualizujte závislosti">Regularly update dependencies</li>
+                    <li data-en="Monitor logs for suspicious activity" data-cs="Sledujte logy pro podezřelou aktivitu">Monitor logs for suspicious activity</li>
+                </ul>
+
+                <h3 data-en="Monitoring &amp; Alerts" data-cs="Sledování &amp; upozornění">Monitoring &amp; Alerts</h3>
+                <p data-en="SCAIPOT includes built-in monitoring and alerting:" data-cs="SCAIPOT obsahuje vestavěné sledování a upozorňování:">SCAIPOT includes built-in monitoring and alerting:</p>
+                <ul>
+                    <li>Real-time scammer interaction logs</li>
+                    <li>Admin webhook notifications</li>
+                    <li>Prometheus metrics endpoint</li>
+                    <li>Grafana dashboard templates</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentLang = 'en';
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        function switchLanguage(lang) {
+            currentLang = lang;
+            document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            document.querySelectorAll('[data-en][data-cs]').forEach(el => {
+                el.textContent = el.getAttribute('data-' + lang);
+            });
+        }
+
+        function copyCommand(button) {
+            const commandBlock = button.parentElement;
+            const code = commandBlock.querySelector('code').textContent;
+            
+            navigator.clipboard.writeText(code).then(() => {
+                const originalText = button.textContent;
+                button.textContent = 'Copied!';
+                button.style.background = 'var(--color-success)';
+                
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.style.background = 'var(--color-primary)';
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                button.textContent = 'Error';
+            });
+        }
+    </script>
+</body>
+</html>

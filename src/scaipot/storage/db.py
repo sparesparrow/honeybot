@@ -59,7 +59,8 @@ async def init_database(database_url: str):
     Args:
         database_url: PostgreSQL connection string
     """
-    logger.info(f"Initializing database: {database_url.split('@')[1] if '@' in database_url else 'local'}")
+    # Security: Don't log database URLs as they may contain credentials
+    logger.info("Initializing database connection")
 
     # Convert sync URL to async
     async_url = database_url.replace("postgresql://", "postgresql+asyncpg://")

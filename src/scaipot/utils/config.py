@@ -2,9 +2,13 @@
 Configuration management for SCAIPOT
 """
 import os
+import secrets
+import logging
 from pathlib import Path
 from typing import Dict, Any
 from dotenv import load_dotenv
+
+logger = logging.getLogger(__name__)
 
 
 def load_config() -> Dict[str, Any]:
@@ -35,7 +39,7 @@ def load_config() -> Dict[str, Any]:
 
         # Database
         "DATABASE_URL": os.getenv("DATABASE_URL", "postgresql://scaipot:password@localhost:5432/scaipot"),
-        "DATABASE_POOL_SIZE": int(os.getenv("DATABASE_POOL_SIZE", "20")),
+        "DATABASE_POOL_SIZE": _get_database_pool_size(),
 
         # Redis
         "REDIS_URL": os.getenv("REDIS_URL", "redis://localhost:6379/0"),
@@ -52,8 +56,8 @@ def load_config() -> Dict[str, Any]:
         "DOCKER_HOST": os.getenv("DOCKER_HOST", "unix:///var/run/docker.sock"),
 
         # Security
-        "JWT_SECRET": os.getenv("JWT_SECRET", "change-this-in-production"),
-        "ALLOWED_ORIGINS": os.getenv("ALLOWED_ORIGINS", "http://localhost:3001").split(","),
+        "JWT_SECRET": _get_jwt_secret(),
+        "ALLOWED_ORIGINS": _get_allowed_origins(),
 
         # Logging
         "LOG_LEVEL": os.getenv("LOG_LEVEL", "INFO"),
@@ -65,7 +69,107 @@ def load_config() -> Dict[str, Any]:
         "DEBUG": os.getenv("DEBUG", "true").lower() == "true",
     }
 
+    # Validate production configuration
+    _validate_production_config(config)
+
     return config
+
+
+def _get_database_pool_size() -> int:
+    """
+    Safely parse DATABASE_POOL_SIZE with validation
+
+    Returns:
+        int: Database pool size (1-100)
+    """
+    try:
+        pool_size = int(os.getenv("DATABASE_POOL_SIZE", "20"))
+        if not 1 <= pool_size <= 100:
+            raise ValueError("Pool size must be between 1 and 100")
+        return pool_size
+    except ValueError as e:
+        logger.warning(f"Invalid DATABASE_POOL_SIZE: {e}, using default 20")
+        return 20
+
+
+def _get_jwt_secret() -> str:
+    """
+    Get JWT secret with production validation
+
+    Returns:
+        str: JWT secret (random for dev, must be set for production)
+    """
+    jwt_secret = os.getenv("JWT_SECRET", "")
+    env = os.getenv("ENV", "development")
+
+    if not jwt_secret or jwt_secret == "change-this-in-production":
+        if env == "production":
+            raise ValueError(
+                "JWT_SECRET must be set to a secure random value in production. "
+                "Generate one with: python -c \"import secrets; print(secrets.token_urlsafe(32))\""
+            )
+        # Generate random secret for development
+        logger.info("Generating random JWT_SECRET for development environment")
+        return secrets.token_urlsafe(32)
+
+    return jwt_secret
+
+
+def _get_allowed_origins() -> list:
+    """
+    Parse and validate ALLOWED_ORIGINS
+
+    Returns:
+        list: List of allowed origin URLs
+    """
+    origins_str = os.getenv("ALLOWED_ORIGINS", "http://localhost:3001")
+    origins = [origin.strip() for origin in origins_str.split(",") if origin.strip()]
+
+    if not origins:
+        logger.warning("No ALLOWED_ORIGINS configured, using default localhost:3001")
+        return ["http://localhost:3001"]
+
+    return origins
+
+
+def _validate_production_config(config: Dict[str, Any]) -> None:
+    """
+    Validate critical security settings for production environment
+
+    Args:
+        config: Configuration dictionary
+
+    Raises:
+        ValueError: If production configuration is insecure
+    """
+    if config.get("ENV") != "production":
+        return
+
+    logger.info("Validating production security configuration")
+
+    # Check for weak database password
+    db_url = config.get("DATABASE_URL", "")
+    if ":password@" in db_url or "scaipot:password@" in db_url:
+        raise ValueError(
+            "DATABASE_URL contains default password 'password' in production. "
+            "Set a strong password in DATABASE_PASSWORD environment variable."
+        )
+
+    # Require Anthropic API key for production
+    if not config.get("ANTHROPIC_API_KEY"):
+        raise ValueError(
+            "ANTHROPIC_API_KEY is required for production deployment. "
+            "Obtain an API key from https://console.anthropic.com/"
+        )
+
+    # Warn about Docker socket access
+    if config.get("HONEYPOT_VM_ENABLED"):
+        logger.warning(
+            "HONEYPOT_VM_ENABLED is active in production. "
+            "Ensure Docker socket is protected via docker-socket-proxy."
+        )
+
+    logger.info("Production security validation passed")
 
 
 def validate_config(config: Dict[str, Any]) -> bool:

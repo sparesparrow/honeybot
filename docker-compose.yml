@@ -65,6 +65,36 @@ services:
     networks:
       - scaipot_network
 
+  # Docker Socket Proxy (Security: Prevents container escape)
+  # Only enabled when VM spawning feature is active
+  docker-proxy:
+    image: tecnativa/docker-socket-proxy:latest
+    environment:
+      CONTAINERS: 1
+      IMAGES: 1
+      NETWORKS: 1
+      VOLUMES: 1
+      # Deny dangerous operations
+      POST: 0
+      BUILD: 0
+      COMMIT: 0
+      CONFIGS: 0
+      DISTRIBUTION: 0
+      EXEC: 0
+      GRPC: 0
+      PLUGINS: 0
+      SECRETS: 0
+      SERVICES: 0
+      SWARM: 0
+      SYSTEM: 0
+      TASKS: 0
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - scaipot_network
+    profiles:
+      - vm-spawning
+
   # SCAIPOT Core Application
   scaipot:
     build:
@@ -77,6 +107,8 @@ services:
       MCP_PROMPTS_URL: http://mcp-prompts:3003
       DATABASE_URL: postgresql://scaipot:${DATABASE_PASSWORD:-changeme}@postgres/scaipot
       REDIS_URL: redis://:${REDIS_PASSWORD:-changeme}@redis:6379
+      # Use docker-proxy when VM spawning is enabled
+      DOCKER_HOST: ${DOCKER_HOST:-tcp://docker-proxy:2375}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
       ENV: ${ENV:-development}
       DEBUG: ${DEBUG:-true}
@@ -92,7 +124,8 @@ services:
     volumes:
       - ./config:/app/config:ro
       - ./logs:/app/logs
-      - /var/run/docker.sock:/var/run/docker.sock  # For VM spawning
+      # SECURITY: Docker socket removed - use docker-proxy service instead
+      # To enable VM spawning: docker-compose --profile vm-spawning up
     command: python -m scaipot.main
     networks:
       - scaipot_network

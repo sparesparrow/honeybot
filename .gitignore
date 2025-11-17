@@ -205,3 +205,25 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# SCAIPOT-specific
+# Honeypot data
+honeypot_logs/
+honeypot_data/
+scammer_*.pcap
+honeypot_*.db
+
+# Config secrets
+config/secrets.yaml
+config/*.key
+config/*.pem
+
+# Blockchain data
+.bitcoin/
+.ethereum/
+
+# MCP-Prompts data
+data/
+
+# Logs
+logs/

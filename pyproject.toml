@@ -1,0 +1,131 @@
+[build-system]
+requires = ["setuptools>=65.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "scaipot"
+version = "0.1.0"
+description = "AI-powered cryptocurrency scammer honeypot system"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+    {name = "sparesparrow", email = "dev@sparesparrow.dev"}
+]
+keywords = ["honeypot", "scam", "fraud", "crypto", "security", "ai"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Security",
+    "Topic :: Communications :: Chat",
+]
+
+dependencies = [
+    # Async HTTP
+    "aiohttp>=3.9.0",
+    "httpx>=0.24.0",
+
+    # LLM & AI
+    "anthropic>=0.26.0",
+    "pydantic>=2.0.0",
+
+    # Messaging Platforms
+    "python-telegram-bot>=20.0",
+    "signalbot>=0.6.0",
+
+    # Data & Storage
+    "sqlalchemy>=2.0.0",
+    "psycopg2-binary>=2.9.0",
+    "redis>=5.0.0",
+    "pydantic-settings>=2.0.0",
+
+    # Infrastructure
+    "docker>=6.0.0",
+    "python-dotenv>=1.0.0",
+
+    # Logging & Monitoring
+    "structlog>=23.0.0",
+    "python-json-logger>=2.0.0",
+
+    # CLI
+    "click>=8.1.0",
+    "rich>=13.0.0",
+    "typer>=0.9.0",
+
+    # Utilities
+    "pyyaml>=6.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.1.0",
+    "pytest-mock>=3.11.0",
+    "black>=23.0.0",
+    "flake8>=6.0.0",
+    "isort>=5.12.0",
+    "mypy>=1.5.0",
+    "types-requests>=2.31.0",
+    "types-pyyaml>=6.0.0",
+    "pre-commit>=3.3.0",
+]
+
+docs = [
+    "sphinx>=7.0.0",
+    "sphinx-rtd-theme>=1.3.0",
+    "sphinx-autodoc-typehints>=1.24.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/sparesparrow/scaipot"
+Documentation = "https://github.com/sparesparrow/scaipot/tree/main/docs"
+Repository = "https://github.com/sparesparrow/scaipot.git"
+"Bug Tracker" = "https://github.com/sparesparrow/scaipot/issues"
+
+[project.scripts]
+scaipot = "scaipot.cli:main"
+
+[tool.setuptools]
+packages = ["scaipot"]
+
+[tool.setuptools.package-dir]
+scaipot = "src/scaipot"
+
+[tool.black]
+line-length = 100
+target-version = ['py310', 'py311', 'py312']
+include = '\\.pyi?$'
+
+[tool.isort]
+profile = "black"
+multi_line_mode = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+ensure_newline_before_comments = true
+line_length = 100
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+addopts = "-v --strict-markers --cov=src/scaipot --cov-report=html"
+markers = [
+    "unit: unit tests",
+    "integration: integration tests",
+    "slow: slow tests",
+]

@@ -6,9 +6,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from src.scaipot.llm_engine.claude_client import ClaudeClient
-from src.scaipot.llm_engine.response_generator import ResponseGenerator
-from src.scaipot.mcp_integration.mcp_client import MCPPromptsClient
+from scaipot.llm_engine.claude_client import ClaudeClient
+from scaipot.llm_engine.response_generator import ResponseGenerator
+from scaipot.mcp_integration.mcp_client import MCPPromptsClient
 
 
 class TestResponseGeneratorInit:

@@ -6,13 +6,13 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from src.scaipot.bots.base_adapter import IncomingMessage
-from src.scaipot.bots.telegram_adapter import TelegramBotAdapter
-from src.scaipot.llm_engine.claude_client import ClaudeClient
-from src.scaipot.llm_engine.response_generator import ResponseGenerator
-from src.scaipot.mcp_integration.mcp_client import MCPPromptsClient
-from src.scaipot.orchestrator import MessageOrchestrator
-from src.scaipot.storage.session_manager import SessionManager
+from scaipot.bots.base_adapter import IncomingMessage
+from scaipot.bots.telegram_adapter import TelegramBotAdapter
+from scaipot.llm_engine.claude_client import ClaudeClient
+from scaipot.llm_engine.response_generator import ResponseGenerator
+from scaipot.mcp_integration.mcp_client import MCPPromptsClient
+from scaipot.orchestrator import MessageOrchestrator
+from scaipot.storage.session_manager import SessionManager
 
 
 @pytest.mark.integration

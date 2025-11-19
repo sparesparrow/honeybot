@@ -7,8 +7,8 @@ import pytest
 from telegram import Update
 from telegram.constants import ChatAction
 
-from src.scaipot.bots.base_adapter import IncomingMessage, OutgoingMessage
-from src.scaipot.bots.telegram_adapter import TelegramBotAdapter
+from scaipot.bots.base_adapter import IncomingMessage, OutgoingMessage
+from scaipot.bots.telegram_adapter import TelegramBotAdapter
 
 
 class TestTelegramBotAdapterInit:

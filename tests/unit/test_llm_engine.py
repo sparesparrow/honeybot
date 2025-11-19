@@ -6,8 +6,8 @@ from unittest.mock import AsyncMock, MagicMock, call, patch
 
 import pytest
 
-from src.scaipot.llm_engine.claude_client import ClaudeClient
-from src.scaipot.llm_engine.response_generator import ResponseGenerator
+from scaipot.llm_engine.claude_client import ClaudeClient
+from scaipot.llm_engine.response_generator import ResponseGenerator
 
 
 class TestClaudeClient:

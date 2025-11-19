@@ -6,10 +6,10 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from src.scaipot.bots.base_adapter import BaseBotAdapter, IncomingMessage, OutgoingMessage
-from src.scaipot.llm_engine.response_generator import ResponseGenerator
-from src.scaipot.orchestrator import MessageOrchestrator
-from src.scaipot.storage.session_manager import SessionManager
+from scaipot.bots.base_adapter import BaseBotAdapter, IncomingMessage, OutgoingMessage
+from scaipot.llm_engine.response_generator import ResponseGenerator
+from scaipot.orchestrator import MessageOrchestrator
+from scaipot.storage.session_manager import SessionManager
 
 
 class TestMessageOrchestratorInit:

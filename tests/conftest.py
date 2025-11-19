@@ -3,18 +3,20 @@ Shared test fixtures and configuration for SCAIPOT tests
 """
 import asyncio
 import os
+from typing import Any, AsyncGenerator, Dict, List
+from unittest.mock import AsyncMock, MagicMock
+
 import pytest
 import pytest_asyncio
-from typing import Dict, Any, AsyncGenerator, List
-from unittest.mock import AsyncMock, MagicMock
 import redis.asyncio as redis
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+
+from scaipot.bots.base_adapter import IncomingMessage, OutgoingMessage
+from scaipot.llm_engine.claude_client import ClaudeClient
+from scaipot.storage.session_manager import SessionManager
 
 # Import modules to be tested
 from scaipot.utils.config import load_config
-from scaipot.storage.session_manager import SessionManager
-from scaipot.llm_engine.claude_client import ClaudeClient
-from scaipot.bots.base_adapter import IncomingMessage, OutgoingMessage
 
 
 # Test configuration fixtures

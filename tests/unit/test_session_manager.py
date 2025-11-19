@@ -2,9 +2,10 @@
 Unit tests for SessionManager class
 """
 import json
-import pytest
 from datetime import datetime, timedelta
-from unittest.mock import patch, AsyncMock
+from unittest.mock import AsyncMock, patch
+
+import pytest
 import redis.asyncio as redis
 
 from scaipot.storage.session_manager import SessionManager

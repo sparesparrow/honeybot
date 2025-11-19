@@ -2,9 +2,10 @@
 Response generation engine integrating Claude API with MCP-Prompts
 """
 import logging
-from typing import Dict, Any, Optional, List
-from .claude_client import ClaudeClient
+from typing import Any, Dict, List, Optional
+
 from ..mcp_integration.mcp_client import MCPPromptsClient
+from .claude_client import ClaudeClient
 
 logger = logging.getLogger(__name__)
 

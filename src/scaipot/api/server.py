@@ -2,26 +2,27 @@
 FastAPI server for SCAIPOT admin dashboard
 """
 import logging
-from typing import Optional, List, Dict, Any
 from datetime import datetime, timedelta
-from fastapi import FastAPI, Depends, HTTPException, status, Query
+from typing import Any, Dict, List, Optional
+
+from fastapi import Depends, FastAPI, HTTPException, Query, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from .auth import AuthDependency, create_access_token
 from .models import (
-    HealthCheckResponse,
-    StatisticsResponse,
-    SessionListResponse,
-    SessionResponse,
     AlertListResponse,
     AlertResponse,
     ConversationResponse,
-    HoneypotResponse,
     CreateHoneypotRequest,
-    LoginRequest,
-    TokenResponse,
     ErrorResponse,
+    HealthCheckResponse,
+    HoneypotResponse,
+    LoginRequest,
+    SessionListResponse,
+    SessionResponse,
+    StatisticsResponse,
+    TokenResponse,
 )
 
 logger = logging.getLogger(__name__)

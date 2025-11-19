@@ -4,9 +4,10 @@ JWT authentication for API endpoints
 import logging
 from datetime import datetime, timedelta
 from typing import Optional
-from jose import JWTError, jwt
+
 from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from jose import JWTError, jwt
 
 logger = logging.getLogger(__name__)
 

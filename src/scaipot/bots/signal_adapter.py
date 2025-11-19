@@ -1,13 +1,13 @@
 """
 Signal bot adapter for scammer honeypot interactions
 """
-import logging
 import asyncio
-from typing import Dict, Any, Optional, Callable, List
+import logging
 from datetime import datetime
+from typing import Any, Callable, Dict, List, Optional
 
 try:
-    from signalbot import SignalBot, Command, Context, Message, triggered
+    from signalbot import Command, Context, Message, SignalBot, triggered
     SIGNALBOT_AVAILABLE = True
 except ImportError:
     SIGNALBOT_AVAILABLE = False

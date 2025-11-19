@@ -1,17 +1,18 @@
 """
 End-to-end integration tests for SCAIPOT honeypot system
 """
-import pytest
 import asyncio
-from unittest.mock import patch, AsyncMock
+from unittest.mock import AsyncMock, patch
 
-from src.scaipot.orchestrator import MessageOrchestrator
-from src.scaipot.storage.session_manager import SessionManager
+import pytest
+
+from src.scaipot.bots.base_adapter import IncomingMessage
+from src.scaipot.bots.telegram_adapter import TelegramBotAdapter
 from src.scaipot.llm_engine.claude_client import ClaudeClient
 from src.scaipot.llm_engine.response_generator import ResponseGenerator
-from src.scaipot.bots.telegram_adapter import TelegramBotAdapter
-from src.scaipot.bots.base_adapter import IncomingMessage
 from src.scaipot.mcp_integration.mcp_client import MCPPromptsClient
+from src.scaipot.orchestrator import MessageOrchestrator
+from src.scaipot.storage.session_manager import SessionManager
 
 
 @pytest.mark.integration

@@ -8,13 +8,13 @@ import signal
 import sys
 from typing import Optional
 
-from scaipot.utils.config import load_config
+from scaipot.bots import SignalBotAdapter, TelegramBotAdapter
+from scaipot.llm_engine import ClaudeClient, ResponseGenerator
+from scaipot.mcp_integration import MCPPromptsClient
+from scaipot.orchestrator import MessageOrchestrator
 from scaipot.storage.db import init_database
 from scaipot.storage.session_manager import SessionManager
-from scaipot.mcp_integration import MCPPromptsClient
-from scaipot.llm_engine import ClaudeClient, ResponseGenerator
-from scaipot.bots import TelegramBotAdapter, SignalBotAdapter
-from scaipot.orchestrator import MessageOrchestrator
+from scaipot.utils.config import load_config
 
 logger = logging.getLogger(__name__)
 

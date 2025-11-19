@@ -2,11 +2,11 @@
 Main fraud detection engine - orchestrates indicator extraction and risk scoring
 """
 import logging
-from typing import Dict, Any, Optional, List
 from datetime import datetime
+from typing import Any, Dict, List, Optional
 
 from .indicators import IndicatorExtractor, ScamIndicators
-from .risk_scorer import RiskScorer, RiskAssessment
+from .risk_scorer import RiskAssessment, RiskScorer
 
 logger = logging.getLogger(__name__)
 

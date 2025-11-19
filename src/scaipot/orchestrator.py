@@ -1,16 +1,17 @@
 """
 Message orchestrator coordinating bot adapters, LLM engine, and session management
 """
-import logging
 import asyncio
+import logging
 import uuid
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
+
 from .bots import BaseBotAdapter, IncomingMessage, OutgoingMessage
+from .fraud_detection import PatternDetector
 from .llm_engine import ClaudeClient, ResponseGenerator
 from .mcp_integration import MCPPromptsClient
-from .storage.session_manager import SessionManager
-from .fraud_detection import PatternDetector
 from .reporting import AlertManager, BitcoinWhosWhoReporter
+from .storage.session_manager import SessionManager
 
 logger = logging.getLogger(__name__)
 

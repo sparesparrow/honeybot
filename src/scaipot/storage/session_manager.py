@@ -3,8 +3,9 @@ Redis-based session management for scammer conversations
 """
 import json
 import logging
-from typing import Dict, Any, Optional, List
 from datetime import datetime, timedelta
+from typing import Any, Dict, List, Optional
+
 import redis.asyncio as redis
 
 logger = logging.getLogger(__name__)

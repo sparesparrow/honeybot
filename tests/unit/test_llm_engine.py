@@ -1,9 +1,10 @@
 """
 Unit tests for LLM Engine modules (Claude client and response generator)
 """
+from typing import Any, Dict, List
+from unittest.mock import AsyncMock, MagicMock, call, patch
+
 import pytest
-from unittest.mock import MagicMock, AsyncMock, patch, call
-from typing import Dict, Any, List
 
 from src.scaipot.llm_engine.claude_client import ClaudeClient
 from src.scaipot.llm_engine.response_generator import ResponseGenerator

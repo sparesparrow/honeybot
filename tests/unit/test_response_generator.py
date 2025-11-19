@@ -1,12 +1,13 @@
 """
 Unit tests for ResponseGenerator class
 """
-import pytest
-from unittest.mock import patch, AsyncMock, MagicMock
 import random
+from unittest.mock import AsyncMock, MagicMock, patch
 
-from src.scaipot.llm_engine.response_generator import ResponseGenerator
+import pytest
+
 from src.scaipot.llm_engine.claude_client import ClaudeClient
+from src.scaipot.llm_engine.response_generator import ResponseGenerator
 from src.scaipot.mcp_integration.mcp_client import MCPPromptsClient
 
 

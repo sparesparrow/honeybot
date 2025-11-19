@@ -2,17 +2,18 @@
 Unit tests for config.py module
 """
 import os
-import pytest
 import secrets
-from unittest.mock import patch, mock_open
 from pathlib import Path
+from unittest.mock import mock_open, patch
+
+import pytest
 
 from scaipot.utils.config import (
-    load_config,
+    _get_allowed_origins,
     _get_database_pool_size,
     _get_jwt_secret,
-    _get_allowed_origins,
     _validate_production_config,
+    load_config,
     validate_config,
 )
 

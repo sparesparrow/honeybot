@@ -1,10 +1,10 @@
 """
 Base adapter interface for messaging platform bots
 """
-from abc import ABC, abstractmethod
-from typing import Dict, Any, Optional, List
-from dataclasses import dataclass
 import logging
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 

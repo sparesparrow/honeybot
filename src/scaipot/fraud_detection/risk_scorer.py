@@ -2,9 +2,9 @@
 Risk scoring engine for scammer conversations
 """
 import logging
-from typing import List, Dict, Any, Optional
 from dataclasses import dataclass
 from enum import Enum
+from typing import Any, Dict, List, Optional
 
 from .indicators import ScamIndicators
 

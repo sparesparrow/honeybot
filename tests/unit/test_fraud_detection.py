@@ -1,19 +1,19 @@
 """
 Unit tests for fraud detection module
 """
-import pytest
-import pytest_asyncio
 from typing import List
 
+import pytest
+import pytest_asyncio
+
 from scaipot.fraud_detection import (
-    PatternDetector,
     IndicatorExtractor,
-    ScamIndicators,
-    RiskScorer,
+    PatternDetector,
     RiskAssessment,
+    RiskScorer,
+    ScamIndicators,
 )
 from scaipot.fraud_detection.risk_scorer import RiskLevel
-
 
 # ============================================================================
 # Fixtures

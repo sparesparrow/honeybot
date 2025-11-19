@@ -2,9 +2,10 @@
 Bitcoin Who's Who API integration for reporting scammer BTC addresses
 """
 import logging
-import httpx
-from typing import List, Dict, Any, Optional
 from datetime import datetime
+from typing import Any, Dict, List, Optional
+
+import httpx
 
 logger = logging.getLogger(__name__)
 

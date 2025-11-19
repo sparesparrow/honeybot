@@ -1,10 +1,10 @@
 """
 Extract scam indicators from messages (crypto addresses, URLs, IBANs, phones)
 """
-import re
 import logging
-from typing import List, Optional
+import re
 from dataclasses import dataclass, field
+from typing import List, Optional
 from urllib.parse import urlparse
 
 logger = logging.getLogger(__name__)

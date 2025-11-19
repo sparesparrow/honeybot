@@ -1,13 +1,14 @@
 """
 Unit tests for TelegramBotAdapter class
 """
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
-from unittest.mock import patch, AsyncMock, MagicMock
 from telegram import Update
 from telegram.constants import ChatAction
 
-from src.scaipot.bots.telegram_adapter import TelegramBotAdapter
 from src.scaipot.bots.base_adapter import IncomingMessage, OutgoingMessage
+from src.scaipot.bots.telegram_adapter import TelegramBotAdapter
 
 
 class TestTelegramBotAdapterInit:

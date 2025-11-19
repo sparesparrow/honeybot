@@ -1,8 +1,9 @@
 """
 Unit tests for ClaudeClient class
 """
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock, AsyncMock
 from anthropic.types import Message
 
 from scaipot.llm_engine.claude_client import ClaudeClient

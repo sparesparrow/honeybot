@@ -2,10 +2,11 @@
 Alert manager for sending notifications to admin channels (Slack, Discord)
 """
 import logging
-import httpx
-from typing import Dict, Any, Optional, List
 from datetime import datetime
 from enum import Enum
+from typing import Any, Dict, List, Optional
+
+import httpx
 
 logger = logging.getLogger(__name__)
 

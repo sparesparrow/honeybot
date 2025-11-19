@@ -9,6 +9,7 @@ from .bots import BaseBotAdapter, IncomingMessage, OutgoingMessage
 from .llm_engine import ClaudeClient, ResponseGenerator
 from .mcp_integration import MCPPromptsClient
 from .storage.session_manager import SessionManager
+from .fraud_detection import PatternDetector
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +25,7 @@ class MessageOrchestrator:
         session_manager: SessionManager,
         response_generator: ResponseGenerator,
         default_category: str = "bitcoin_investment",
+        pattern_detector: Optional[PatternDetector] = None,
     ):
         """
         Initialize message orchestrator
@@ -32,15 +34,17 @@ class MessageOrchestrator:
             session_manager: Session management instance
             response_generator: Response generation engine
             default_category: Default honeypot category for new conversations
+            pattern_detector: Optional fraud detection engine
         """
         self.session_manager = session_manager
         self.response_generator = response_generator
         self.default_category = default_category
+        self.pattern_detector = pattern_detector or PatternDetector()
 
         self.bot_adapters: Dict[str, BaseBotAdapter] = {}
         self.is_running = False
 
-        logger.info("Initialized MessageOrchestrator")
+        logger.info("Initialized MessageOrchestrator with fraud detection")
 
     def register_bot_adapter(
         self, platform_name: str, adapter: BaseBotAdapter
@@ -169,11 +173,31 @@ class MessageOrchestrator:
                 metadata=incoming_msg.metadata,
             )
 
+            # Analyze message for fraud patterns
+            analysis = await self.pattern_detector.analyze_message(
+                message=incoming_msg.content,
+                metadata={
+                    "session_id": session_id,
+                    "platform": incoming_msg.platform,
+                    "sender_id": incoming_msg.sender_id,
+                },
+            )
+
+            # Log analysis results
+            if analysis.get("risk_assessment", {}).get("should_alert"):
+                logger.warning(
+                    f"HIGH RISK detected in {session_id}: "
+                    f"{analysis['risk_assessment']['risk_level']} "
+                    f"({analysis['indicators']['total_count']} indicators)"
+                )
+                # TODO: Trigger admin alert (Phase 2: reporting module)
+
             # Save outgoing response to history
             await self.session_manager.add_message_to_history(
                 session_id=session_id,
                 role="assistant",
                 content=response_text,
+                metadata={"fraud_analysis": analysis},
             )
 
             # Send response
@@ -340,6 +364,7 @@ class MessageOrchestrator:
             health = {
                 "orchestrator": self.is_running,
                 "redis": await self.session_manager.health_check(),
+                "fraud_detection": await self.pattern_detector.health_check(),
             }
 
             # Check each bot adapter

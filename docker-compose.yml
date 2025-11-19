@@ -65,6 +65,25 @@ services:
     networks:
       - scaipot_network
 
+  # Signal CLI REST API (for Signal bot adapter)
+  signal-cli-rest-api:
+    image: bbernhard/signal-cli-rest-api:latest
+    environment:
+      MODE: json-rpc  # REQUIRED for signalbot library
+    volumes:
+      - signal-data:/home/.local/share/signal-cli
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/v1/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - scaipot_network
+    profiles:
+      - signal  # Optional service, enable with: docker-compose --profile signal up
+
   # Docker Socket Proxy (Security: Prevents container escape)
   # Only enabled when VM spawning feature is active
   docker-proxy:
@@ -151,6 +170,8 @@ volumes:
   pgdata:
     driver: local
   redisdata:
+    driver: local
+  signal-data:
     driver: local
   grafanadata:
     driver: local

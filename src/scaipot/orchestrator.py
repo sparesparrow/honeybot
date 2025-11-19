@@ -10,6 +10,7 @@ from .llm_engine import ClaudeClient, ResponseGenerator
 from .mcp_integration import MCPPromptsClient
 from .storage.session_manager import SessionManager
 from .fraud_detection import PatternDetector
+from .reporting import AlertManager, BitcoinWhosWhoReporter
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +27,8 @@ class MessageOrchestrator:
         response_generator: ResponseGenerator,
         default_category: str = "bitcoin_investment",
         pattern_detector: Optional[PatternDetector] = None,
+        alert_manager: Optional[AlertManager] = None,
+        btc_reporter: Optional[BitcoinWhosWhoReporter] = None,
     ):
         """
         Initialize message orchestrator
@@ -35,16 +38,22 @@ class MessageOrchestrator:
             response_generator: Response generation engine
             default_category: Default honeypot category for new conversations
             pattern_detector: Optional fraud detection engine
+            alert_manager: Optional alert manager for admin notifications
+            btc_reporter: Optional Bitcoin Who's Who reporter
         """
         self.session_manager = session_manager
         self.response_generator = response_generator
         self.default_category = default_category
         self.pattern_detector = pattern_detector or PatternDetector()
+        self.alert_manager = alert_manager
+        self.btc_reporter = btc_reporter
 
         self.bot_adapters: Dict[str, BaseBotAdapter] = {}
         self.is_running = False
 
-        logger.info("Initialized MessageOrchestrator with fraud detection")
+        logger.info(
+            "Initialized MessageOrchestrator with fraud detection and reporting"
+        )
 
     def register_bot_adapter(
         self, platform_name: str, adapter: BaseBotAdapter
@@ -183,14 +192,34 @@ class MessageOrchestrator:
                 },
             )
 
-            # Log analysis results
+            # Handle high-risk patterns
             if analysis.get("risk_assessment", {}).get("should_alert"):
                 logger.warning(
                     f"HIGH RISK detected in {session_id}: "
                     f"{analysis['risk_assessment']['risk_level']} "
                     f"({analysis['indicators']['total_count']} indicators)"
                 )
-                # TODO: Trigger admin alert (Phase 2: reporting module)
+
+                # Send admin alert
+                if self.alert_manager:
+                    await self.alert_manager.send_high_risk_alert(
+                        session_id=session_id,
+                        risk_level=analysis["risk_assessment"]["risk_level"],
+                        risk_score=analysis["risk_assessment"]["risk_score"],
+                        indicators=analysis["indicators"],
+                        message_preview=incoming_msg.content,
+                        platform=incoming_msg.platform,
+                        recommendations=analysis["risk_assessment"]["recommendations"],
+                    )
+
+                # Report BTC addresses to threat database
+                if self.btc_reporter and analysis["indicators"].get("btc_addresses"):
+                    await self.btc_reporter.report_scammer_addresses(
+                        btc_addresses=analysis["indicators"]["btc_addresses"],
+                        scam_type="crypto_scam",
+                        description=f"Detected in honeypot conversation (risk: {analysis['risk_assessment']['risk_level']})",
+                        session_id=session_id,
+                    )
 
             # Save outgoing response to history
             await self.session_manager.add_message_to_history(

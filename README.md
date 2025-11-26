@@ -1,11 +1,11 @@
-# SCAIPOT - AI-Powered Cryptocurrency Scammer Honeypot
+# HONEYBOT - AI-Powered Cryptocurrency Scammer Honeypot
 
-[![Status](https://img.shields.io/badge/status-alpha%20v0.1.0-yellow)](https://github.com/sparesparrow/scaipot)
+[![Status](https://img.shields.io/badge/status-alpha%20v0.1.0-yellow)](https://github.com/sparesparrow/honeybot)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.10+-blue)](https://www.python.org/)
-[![Development](https://img.shields.io/badge/development-active-green)](https://github.com/sparesparrow/scaipot)
+[![Development](https://img.shields.io/badge/development-active-green)](https://github.com/sparesparrow/honeybot)
 
-**SCAIPOT** (Scam AI Honeypot) is a production-ready, multi-platform AI-powered honeypot system designed to detect, engage, and analyze cryptocurrency scammers across Signal, Telegram, and WhatsApp. It combines conversational AI, blockchain monitoring, and network analysis to waste scammer time, collect intelligence, and report fraudulent activities automatically.
+**HONEYBOT** (Scam AI Honeypot) is a production-ready, multi-platform AI-powered honeypot system designed to detect, engage, and analyze cryptocurrency scammers across Signal, Telegram, and WhatsApp. It combines conversational AI, blockchain monitoring, and network analysis to waste scammer time, collect intelligence, and report fraudulent activities automatically.
 
 > **Current Status**: Alpha v0.1.0 - Core architecture complete, actively implementing bot adapters and LLM engine
 
@@ -45,8 +45,8 @@
 
 ```bash
 # Clone repository
-git clone https://github.com/sparesparrow/scaipot.git
-cd scaipot
+git clone https://github.com/sparesparrow/honeybot.git
+cd honeybot
 
 # Copy environment template
 cp .env.example .env
@@ -58,19 +58,19 @@ nano .env
 docker-compose up -d
 
 # Initialize database
-docker-compose exec scaipot python -m scaipot.cli init
+docker-compose exec honeybot python -m honeybot.cli init
 
 # Check status
 docker-compose ps
-docker-compose logs -f scaipot
+docker-compose logs -f honeybot
 ```
 
 ### Option 2: Local Development
 
 ```bash
 # Clone and navigate
-git clone https://github.com/sparesparrow/scaipot.git
-cd scaipot
+git clone https://github.com/sparesparrow/honeybot.git
+cd honeybot
 
 # Create virtual environment
 python3.10 -m venv venv
@@ -87,20 +87,20 @@ nano .env
 pytest tests/ -v
 
 # Start honeypot
-python -m scaipot.cli start
+python -m honeybot.cli start
 ```
 
 ### First Honeypot Deployment
 
 ```bash
 # Create a Bitcoin investment honeypot for Telegram
-python -m scaipot.cli create-honeypot \
+python -m honeybot.cli create-honeypot \
   --platform telegram \
   --category bitcoin_investment \
   --name "BTCNewbie"
 
 # Monitor incoming messages (logs to console + database)
-tail -f logs/scaipot.log
+tail -f logs/honeybot.log
 ```
 
 ---
@@ -121,8 +121,8 @@ tail -f logs/scaipot.log
 ## 🏗️ Project Structure
 
 ```
-scaipot/
-├── src/scaipot/               # Core application (in development)
+honeybot/
+├── src/honeybot/               # Core application (in development)
 │   ├── bots/                  # Platform adapters (Telegram, Signal, WhatsApp)
 │   ├── behaviors/             # Honeypot behaviors (URL clicker, VM, blockchain)
 │   ├── mcp_integration/       # MCP-Prompts client
@@ -194,7 +194,7 @@ Each category includes:
 
 ## 🔐 Security & Ethics
 
-**SCAIPOT is designed to be:**
+**HONEYBOT is designed to be:**
 
 ✅ **Defensive Only**: Honeypots are passive, scammers initiate contact first
 ✅ **Legal**: Operates within your own infrastructure, no unauthorized access
@@ -220,8 +220,8 @@ We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ```bash
 # Fork & clone
-git clone https://github.com/YOUR_USERNAME/scaipot.git
-cd scaipot
+git clone https://github.com/YOUR_USERNAME/honeybot.git
+cd honeybot
 
 # Create feature branch
 git checkout -b feature/my-feature
@@ -271,15 +271,15 @@ git push origin feature/my-feature
 
 ## 📞 Support & Community
 
-- **GitHub Issues**: [Report bugs](https://github.com/sparesparrow/scaipot/issues)
-- **GitHub Discussions**: [Ask questions](https://github.com/sparesparrow/scaipot/discussions)
-- **Email**: scaipot@sparesparrow.dev
+- **GitHub Issues**: [Report bugs](https://github.com/sparesparrow/honeybot/issues)
+- **GitHub Discussions**: [Ask questions](https://github.com/sparesparrow/honeybot/discussions)
+- **Email**: honeybot@sparesparrow.dev
 
 ---
 
 ## 📄 License
 
-SCAIPOT is released under the **MIT License** - see [LICENSE](LICENSE) for details.
+HONEYBOT is released under the **MIT License** - see [LICENSE](LICENSE) for details.
 
 ---
 

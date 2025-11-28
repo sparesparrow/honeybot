@@ -8,13 +8,13 @@ import signal
 import sys
 from typing import Optional
 
-from scaipot.utils.config import load_config
+from scaipot.bots import SignalBotAdapter, TelegramBotAdapter
+from scaipot.llm_engine import ClaudeClient, ResponseGenerator
+from scaipot.mcp_integration import MCPPromptsClient
+from scaipot.orchestrator import MessageOrchestrator
 from scaipot.storage.db import init_database
 from scaipot.storage.session_manager import SessionManager
-from scaipot.mcp_integration import MCPPromptsClient
-from scaipot.llm_engine import ClaudeClient, ResponseGenerator
-from scaipot.bots import TelegramBotAdapter
-from scaipot.orchestrator import MessageOrchestrator
+from scaipot.utils.config import load_config
 
 logger = logging.getLogger(__name__)
 
@@ -100,7 +100,24 @@ async def main():
         else:
             logger.warning("⚠ Telegram bot token not configured, skipping")
 
-        # TODO: Add Signal and WhatsApp adapters when implemented
+        # Initialize Signal bot adapter if configured
+        if signal_phone := config.get("SIGNAL_PHONE_NUMBER"):
+            try:
+                signal_adapter = SignalBotAdapter(
+                    config={
+                        "phone_number": signal_phone,
+                        "signal_service": config.get("SIGNAL_SERVICE", "signal-cli-rest-api:8080"),
+                        "storage_path": config.get("SIGNAL_STORAGE_PATH"),
+                    }
+                )
+                orchestrator.register_bot_adapter("signal", signal_adapter)
+                logger.info("✓ Signal bot adapter registered")
+            except ImportError as e:
+                logger.warning(f"⚠ Signal adapter unavailable: {e}")
+        else:
+            logger.warning("⚠ Signal phone number not configured, skipping")
+
+        # TODO: Add WhatsApp adapter when implemented
 
         # Set up signal handlers for graceful shutdown
         setup_signal_handlers(orchestrator)

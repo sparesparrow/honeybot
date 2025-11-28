@@ -2,19 +2,19 @@
 Telegram bot adapter implementation
 """
 import logging
-from typing import Dict, Any, Optional, Callable, List
 from datetime import datetime
+from typing import Any, Callable, Dict, List, Optional
 
 from telegram import Update
+from telegram.constants import ChatAction
 from telegram.ext import (
     Application,
     ApplicationBuilder,
-    MessageHandler,
     CommandHandler,
-    filters,
     ContextTypes,
+    MessageHandler,
+    filters,
 )
-from telegram.constants import ChatAction
 
 from .base_adapter import BaseBotAdapter, IncomingMessage, OutgoingMessage
 

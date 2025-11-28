@@ -1,11 +1,12 @@
 """
 Configuration management for SCAIPOT
 """
+import logging
 import os
 import secrets
-import logging
 from pathlib import Path
-from typing import Dict, Any
+from typing import Any, Dict
+
 from dotenv import load_dotenv
 
 logger = logging.getLogger(__name__)

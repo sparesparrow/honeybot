@@ -6,6 +6,7 @@ allowing SCAIPOT to interact with scammers across multiple platforms.
 """
 
 from .base_adapter import BaseBotAdapter, IncomingMessage, OutgoingMessage
+from .signal_adapter import SignalBotAdapter
 from .telegram_adapter import TelegramBotAdapter
 
 __all__ = [
@@ -13,4 +14,5 @@ __all__ = [
     "IncomingMessage",
     "OutgoingMessage",
     "TelegramBotAdapter",
+    "SignalBotAdapter",
 ]

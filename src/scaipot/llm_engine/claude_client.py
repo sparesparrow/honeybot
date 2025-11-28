@@ -2,7 +2,8 @@
 Claude API client wrapper with prompt caching and streaming support
 """
 import logging
-from typing import Dict, Any, Optional, List, AsyncIterator
+from typing import Any, AsyncIterator, Dict, List, Optional
+
 from anthropic import Anthropic, AsyncAnthropic
 from anthropic.types import Message, MessageStreamEvent
 

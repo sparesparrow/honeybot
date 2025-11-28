@@ -1,9 +1,10 @@
 """
 SCAIPOT Command Line Interface
 """
+from typing import Optional
+
 import typer
 from rich.console import Console
-from typing import Optional
 
 app = typer.Typer(help="SCAIPOT - AI-Powered Cryptocurrency Scammer Honeypot")
 console = Console()

@@ -1,9 +1,10 @@
 """
 MCP-Prompts Client for fetching honeypot categories
 """
-import httpx
 import logging
-from typing import Dict, Any, List, Optional
+from typing import Any, Dict, List, Optional
+
+import httpx
 
 logger = logging.getLogger(__name__)
 

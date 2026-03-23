@@ -149,6 +149,27 @@ services:
     networks:
       - scaipot_network
 
+  # SCAIPOT MCP Server — exposes honeypot tools to Claude Desktop / Claude Code / Cursor
+  # Register in Claude Desktop: ~/Library/Application Support/Claude/claude_desktop_config.json
+  # Or via Claude Code: claude mcp add scaipot -- python -m scaipot.mcp_server
+  scaipot-mcp:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    environment:
+      SCAIPOT_API_URL: http://scaipot:8000
+      SCAIPOT_API_TOKEN: ${MCP_SERVER_TOKEN:-}
+      LOG_LEVEL: ${LOG_LEVEL:-WARNING}
+    ports:
+      - "8001:8001"  # Expose for local Claude Desktop registration
+    depends_on:
+      - scaipot
+    command: python -m scaipot.mcp_server
+    networks:
+      - scaipot_network
+    profiles:
+      - mcp  # Enable with: docker-compose --profile mcp up
+
   # Grafana Monitoring (Optional)
   grafana:
     image: grafana/grafana:latest

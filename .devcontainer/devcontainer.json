@@ -1,0 +1,57 @@
+{
+  "name": "SCAIPOT Dev Environment",
+  "image": "mcr.microsoft.com/devcontainers/python:3.11-bullseye",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "version": "latest",
+      "enableNonRootDocker": "true",
+      "moby": "true"
+    },
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "20"
+    },
+    "ghcr.io/devcontainers/features/git:1": {}
+  },
+  "postCreateCommand": "pip install -e '.[dev]' && cp .env.example .env && echo 'Dev environment ready! Edit .env with your API keys.'",
+  "postStartCommand": "git config --global --add safe.directory ${containerWorkspaceFolder}",
+  "forwardPorts": [8000, 8001, 3003, 5432, 6379, 3000],
+  "portsAttributes": {
+    "8000": {"label": "SCAIPOT FastAPI", "onAutoForward": "notify"},
+    "8001": {"label": "SCAIPOT MCP Server", "onAutoForward": "notify"},
+    "3003": {"label": "MCP-Prompts Server", "onAutoForward": "silent"},
+    "5432": {"label": "PostgreSQL", "onAutoForward": "silent"},
+    "6379": {"label": "Redis", "onAutoForward": "silent"},
+    "3000": {"label": "Grafana", "onAutoForward": "silent"}
+  },
+  "mounts": [
+    "source=${localWorkspaceFolder}/.env,target=/workspaces/honeybot/.env,type=bind,consistency=cached"
+  ],
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "python.testing.pytestEnabled": true,
+        "python.testing.pytestArgs": ["tests/", "-v"],
+        "editor.formatOnSave": true,
+        "editor.rulers": [100]
+      },
+      "extensions": [
+        "ms-python.python",
+        "ms-python.black-formatter",
+        "ms-python.isort",
+        "ms-python.flake8",
+        "ms-python.mypy-type-checker",
+        "GitHub.copilot",
+        "GitHub.copilot-chat",
+        "ms-azuretools.vscode-docker",
+        "redhat.vscode-yaml",
+        "humao.rest-client",
+        "eamodio.gitlens"
+      ]
+    }
+  },
+  "remoteUser": "vscode",
+  "containerEnv": {
+    "PYTHONPATH": "/workspaces/honeybot/src"
+  }
+}

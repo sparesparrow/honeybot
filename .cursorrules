@@ -1,0 +1,63 @@
+# SCAIPOT Development Rules for Cursor AI
+
+## Project Overview
+SCAIPOT is an AI-powered cryptocurrency scammer honeypot system. It uses Claude API for
+conversational AI, Redis for session caching, PostgreSQL for persistence, and MCP-Prompts
+for dynamic persona management across Telegram, Signal, and WhatsApp platforms.
+
+## Code Style
+- Black formatting: 100 character line length (enforce strictly)
+- Type hints required on ALL function signatures (parameters + return types)
+- Async/await required for ALL I/O operations (network, database, Redis, file)
+- Structured logging via `structlog` or stdlib `logging`, never bare `print()`
+- Import order: stdlib → third-party → local (isort enforced)
+
+## Architecture Patterns
+- All bot adapters must inherit from `src/scaipot/bots/base_adapter.py:BaseBotAdapter`
+- New behaviors go in `src/scaipot/behaviors/` with async methods
+- External API calls → use `httpx.AsyncClient` with timeout and retry
+- Redis keys format: `scaipot:{platform}:{user_id}` for sessions
+- Cache keys format: `scaipot:prompt:category:{name}:v{version}` for prompts
+- PostgreSQL access via SQLAlchemy 2.0 async engine only
+
+## Claude API / LLM Rules
+- ALWAYS include `cache_control: {"type": "ephemeral"}` on system prompt blocks
+- Use `AsyncAnthropic` client (never sync `Anthropic` in async contexts)
+- Default model: `claude-3-5-sonnet-20241022`, max_tokens: 2048, temperature: 1.0
+- Log cache hit/miss stats via `_log_cache_usage()` in every response
+- Never hardcode system prompts — always fetch from MCP-Prompts server
+
+## Security Rules
+- NEVER commit `.env` files or API keys to Git
+- NEVER log raw API keys, tokens, or passwords (mask with `***`)
+- Use `yaml.safe_load()` — never `yaml.load()`
+- Validate all user input at platform adapter boundary before passing to orchestrator
+- Production: enforce `ENV=production` → validates JWT_SECRET and DB password strength
+
+## Testing Rules
+- Unit tests: use `pytest-asyncio` with `asyncio_mode = "auto"`
+- Mock external services: `AsyncMock` for Claude API, `fakeredis` for Redis
+- Every new module must have a corresponding `tests/unit/test_{module}.py`
+- Aim for 75%+ coverage; run: `pytest tests/ --cov=src/scaipot --cov-report=html`
+- Integration tests require Docker: `docker-compose up -d postgres redis`
+
+## MCP Integration
+- Fetch category prompts via `src/scaipot/mcp_integration/mcp_client.py:MCPPromptsClient`
+- MCP-Prompts server runs at `MCP_PROMPTS_URL` (default: `http://mcp-prompts:3003`)
+- Category endpoint: `GET /v1/prompts/honeypot/category/{name}?platform={platform}`
+- Cache category configs in `ResponseGenerator._category_cache` (in-memory, 24h TTL)
+- SCAIPOT MCP server endpoint: `http://localhost:8001` (for Claude Desktop integration)
+
+## Docker
+- Full stack: `docker-compose up -d`
+- Dev stack (no behaviors): `docker-compose up -d postgres redis mcp-prompts`
+- Signal support: `docker-compose --profile signal up -d`
+- VM spawning: `docker-compose --profile vm-spawning up -d`
+- Monitoring: `docker-compose --profile monitoring up -d`
+
+## Common Pitfalls to Avoid
+- Don't use `asyncio.run()` inside async functions — use `await` directly
+- Don't bypass prompt caching by building system prompts inline — use ResponseGenerator
+- Don't hardcode platform names — use `IncomingMessage.platform` from base adapter
+- Don't store sensitive data in Redis without TTL — always set expiration
+- Don't use `docker.from_env()` directly — route through docker-socket-proxy service
